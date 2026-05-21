@@ -3,368 +3,370 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CloudOS Pro - Ultimate Windows Edition</title>
+<title>CloudOS - NextGen WebOS</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;}
 :root{
   --accent:#0078d4;--accent-hover:#106ebe;
   --taskbar-bg:rgba(18,18,18,0.85);
-  --window-bg:rgba(32,32,32,0.95);--window-header:#2b2b2b;
+  --window-bg:#202020;--window-header:#2b2b2b;
   --border:rgba(255,255,255,0.1);--text:#ffffff;--text2:#ababab;
   --surface:#2b2b2b;--surface2:#383838;
   --hover:rgba(255,255,255,0.08);--active:rgba(255,255,255,0.12);
   --font:'Segoe UI',system-ui,sans-serif;
 }
-html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);background:#000;color:var(--text);font-size:13px;user-select:none;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);background:#000;color:var(--text);font-size:13px;}
 
-/* ── BOOT ── */
+/* ── BOOT SCREEN ── */
 #boot{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;transition:opacity 0.8s ease;}
-#boot-logo{width:80px;height:80px;margin-bottom:60px;animation:bootPop .6s ease;font-size:70px;text-align:center;line-height:80px;}
+#boot-logo{width:100px;height:100px;margin-bottom:40px;font-size:80px;text-align:center;animation:bootPop .6s ease;}
+@keyframes bootPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 #boot-spinner{display:flex;gap:8px;}
-.bs-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:bsDot 1.2s infinite;}
-.bs-dot:nth-child(2){animation-delay:.15s}.bs-dot:nth-child(3){animation-delay:.3s}.bs-dot:nth-child(4){animation-delay:.45s}.bs-dot:nth-child(5){animation-delay:.6s}
-@keyframes bsDot{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.bs-dot{width:10px;height:10px;border-radius:50%;background:#fff;animation:bsDot 1.2s infinite;}
+.bs-dot:nth-child(2){animation-delay:.15s}.bs-dot:nth-child(3){animation-delay:.3s}.bs-dot:nth-child(4){animation-delay:.45s}
+@keyframes bsDot{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
 /* ── LOCK SCREEN ── */
-#lockscreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d1b3e 0%,#0a2818 100%);display:none;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.5s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.5s;}
-#lockscreen-time{font-size:96px;font-weight:200;letter-spacing:-4px;}
-#lockscreen-date{font-size:20px;color:var(--text2);margin-bottom:48px;}
-#lockscreen-hint{font-size:13px;color:rgba(255,255,255,.5);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+#lockscreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#311042 100%);display:none;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.5s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.5s;}
+#lockscreen-time{font-size:96px;font-weight:200;letter-spacing:-2px;}
+#lockscreen-date{font-size:22px;color:var(--text2);margin-bottom:48px;}
+#lockscreen-hint{font-size:14px;color:rgba(255,255,255,.6);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
 
 /* ── DESKTOP ── */
-#desktop{position:fixed;inset:0 0 48px 0;background:url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1920&q=80') center/cover no-repeat;display:none;transition:background 0.5s ease;}
-#desktop-overlay{position:absolute;inset:0;background:rgba(0,0,0,.15);z-index:0;}
+#desktop{position:fixed;inset:0 0 48px 0;background:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center/cover no-repeat;display:none;overflow:hidden;}
+#desktop-overlay{position:absolute;inset:0;background:rgba(0,0,0,.15);z-index: 0;}
 
-/* ── BLUE SELECTION BOX ── */
-#selection-box{position:absolute;border:1px solid rgba(0,120,212,0.6);background:rgba(0,120,212,0.25);pointer-events:none;display:none;z-index:10;}
+/* ── SELECTION BOX (Mavi Şey) ── */
+#drag-select{position:absolute;background:rgba(0,120,212,0.25);border:1px solid #0078d4;display:none;pointer-events:none;z-index:99;}
 
 /* ── DESKTOP ICONS ── */
-#desktop-icons{position:absolute;inset:16px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:10px;z-index:1;pointer-events:none;}
-.desk-icon{width:80px;height:85px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;border-radius:4px;cursor:pointer;border:1px solid transparent;position:absolute;pointer-events:auto;user-select:none;transition:background 0.1s, border-color 0.1s;}
+#desktop-icons{position:absolute;inset:20px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:15px;z-index:1;pointer-events:none;}
+.desk-icon{width:80px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;border-radius:4px;cursor:pointer;pointer-events:auto;position:absolute;transition:background 0.1s, border 0.1s;border:1px solid transparent;}
 .desk-icon:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15);}
 .desk-icon.selected{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25);}
-.desk-icon .di-emoji{font-size:32px;line-height:1;text-align:center;}
-.desk-icon span{font-size:11px;text-align:center;line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.8);color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-
-/* ── WIDGETS ── */
-#desktop-widgets{position:absolute;top:16px;right:16px;z-index:1;display:flex;flex-direction:column;gap:10px;width:280px;pointer-events:auto;}
-.dw-card{background:rgba(25,25,25,.75);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.3);}
-.dw-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;font-weight:600;}
-.weather-main{display:flex;align-items:center;gap:12px;}
-.weather-icon{font-size:36px;}
-.weather-temp{font-size:32px;font-weight:200;}
-.weather-desc{font-size:12px;color:var(--text2);}
-.weather-city{font-size:12px;color:var(--accent);font-weight:500;}
-.weather-row{display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--text2);}
-.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.cal-month{font-size:13px;font-weight:600;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;}
-.cal-day-label{font-size:10px;color:var(--text2);font-weight:600;}
-.cal-day{font-size:11px;padding:4px 0;border-radius:4px;}
-.cal-day.today{background:var(--accent);color:#fff;font-weight:600;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin:auto;}
-
-/* ── TASKBAR ── */
-#taskbar{position:fixed;bottom:0;left:0;right:0;height:48px;background:var(--taskbar-bg);backdrop-filter:blur(30px);border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;z-index:10000;padding:0 12px;justify-content:space-between;}
-#taskbar-left{width:150px;display:flex;align-items:center;}
-#taskbar-center{display:flex;align-items:center;gap:6px;}
-#start-btn{width:40px;height:40px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:22px;}
-#start-btn:hover{background:var(--hover);transform:scale(1.05);}
-#taskbar-apps{display:flex;align-items:center;gap:4px;}
-.tb-app-btn{width:40px;height:40px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;transition:all .15s;}
-.tb-app-btn:hover{background:var(--hover);}
-.tb-app-btn::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:0;height:3px;border-radius:2px;background:var(--text2);transition:all .2s;}
-.tb-app-btn.running::after{width:6px;}
-.tb-app-btn.active::after{width:16px;background:var(--accent);}
-#taskbar-right{display:flex;align-items:center;gap:4px;min-width:150px;justify-content:flex-end;}
-.tray-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:4px;cursor:pointer;}
-.tray-icon:hover{background:var(--hover);}
-#clock-widget{text-align:right;line-height:1.3;font-size:11px;padding:4px 8px;border-radius:4px;cursor:pointer;}
-#clock-widget:hover{background:var(--hover);}
-
-/* ── START MENU ── */
-#start-menu{position:fixed;bottom:56px;left:50%;transform:translateX(-50%) translateY(20px);width:580px;height:480px;background:rgba(25,25,25,.96);backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.12);border-radius:10px;display:none;flex-direction:column;z-index:9998;box-shadow:0 16px 48px rgba(0,0,0,.5);opacity:0;transition:all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);}
-#start-menu.open{display:flex;opacity:1;transform:translateX(-50%) translateY(0);}
-#start-search-wrap{padding:24px 32px 16px;}
-#start-search{width:100%;padding:10px 18px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;font-size:13px;outline:none;}
-#start-search:focus{border-color:var(--accent);background:rgba(255,255,255,.1);}
-#start-pinned{padding:0 32px;flex:1;overflow-y:auto;}
-#start-pinned h4{font-size:12px;font-weight:600;margin-bottom:16px;color:var(--text2);}
-.start-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;}
-.start-app{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background 0.15s;}
-.start-app:hover{background:var(--hover);}
-.start-app .sa-icon{font-size:28px;}
-.start-app .sa-name{font-size:11px;text-align:center;color:#fff;}
-#start-bottom{padding:16px 32px;background:rgba(0,0,0,0.15);border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;}
-.start-user{display:flex;align-items:center;gap:10px;}
-.start-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;}
-.start-username{font-size:12px;font-weight:500;}
-.start-power-btns{display:flex;}
-.start-pw-btn{width:32px;height:32px;border-radius:4px;border:none;background:transparent;color:#fff;font-size:16px;cursor:pointer;}
-.start-pw-btn:hover{background:var(--hover);}
-
-/* ── CONTEXT MENU ── */
-#ctx-menu{position:fixed;z-index:99995;background:rgba(35,35,35,.96);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:8px;padding:4px;min-width:180px;display:none;box-shadow:0 8px 32px rgba(0,0,0,.4);}
-.ctx-item{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;}
-.ctx-item:hover{background:var(--hover);}
-.ctx-item .ci-icon{font-size:14px;width:16px;text-align:center;}
-.ctx-sep{height:1px;background:rgba(255,255,255,0.06);margin:4px 0;}
+.desk-icon .di-emoji{font-size:36px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));}
+.desk-icon span{font-size:11px;text-align:center;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,.9);color:#fff;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
 /* ── WINDOWS ── */
-.window{position:absolute;background:var(--window-bg);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-width:300px;min-height:180px;box-shadow:0 12px 36px rgba(0,0,0,.4);opacity:0;transform:scale(0.95);transition:opacity 0.2s, transform 0.2s, box-shadow 0.2s;z-index:5;}
-.window.open-anim{opacity:1;transform:scale(1);}
-.window.focused{z-index:20;border-color:rgba(255,255,255,0.18);box-shadow:0 16px 48px rgba(0,0,0,.5);}
-.window.minimized-anim{opacity:0;transform:scale(0.85) translateY(100px);pointer-events:none;}
-.win-header{display:flex;align-items:center;height:36px;background:var(--window-header);user-select:none;flex-shrink:0;}
-.win-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-.win-title{flex:1;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.win-controls{display:flex;}
-.win-ctrl{width:46px;height:36px;border:none;background:transparent;color:var(--text);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.win-ctrl:hover{background:var(--hover);}
-.win-ctrl.close:hover{background:#c42b1c;color:#fff;}
-.win-body{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column;}
+.window{position:absolute;background:rgba(32,32,32,0.9);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-width:400px;min-height:300px;box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:10;transform:scale(0.95);opacity:0;transition:transform 0.18s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.18s;visibility:hidden;}
+.window.show{transform:scale(1);opacity:1;visibility:visible;}
+.window.focused{border-color:rgba(255,255,255,0.25);box-shadow:0 15px 45px rgba(0,0,0,.6);z-index:50;}
+.window.minimized{transform:scale(0.8) translateY(100px);opacity:0;visibility:hidden;pointer-events:none;}
+.window.maximized{inset:0 !important;width:100% !important;height:100% !important;border-radius:0;}
+.win-header{display:flex;align-items:center;height:38px;background:var(--window-header);flex-shrink:0;user-select:none;}
+.win-icon{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.win-title{flex:1;font-size:12px;color:#e3e3e3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.win-controls{display:flex;height:100%;}
+.win-ctrl{width:46px;height:100%;border:none;background:transparent;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.1s;}
+.win-ctrl:hover{background:rgba(255,255,255,.1);}
+.win-ctrl.close:hover{background:#e81123;}
+.win-body{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--window-bg);}
 .resize-handle{position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:se-resize;z-index:100;}
 
 /* ── FILE EXPLORER ── */
 .fe-wrap{display:flex;height:100%;flex:1;}
-.fe-sidebar{width:160px;background:rgba(0,0,0,0.1);border-right:1px solid var(--border);padding:8px 0;}
-.fe-nav-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;border-radius:4px;margin:2px 6px;}
+.fe-sidebar{width:160px;border-right:1px solid var(--border);padding:10px 4px;background:rgba(25,25,25,0.5);flex-shrink:0;}
+.fe-nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-radius:6px;transition:background 0.1s;}
 .fe-nav-item:hover{background:var(--hover);}
-.fe-nav-item.active{background:rgba(255,255,255,0.06);font-weight:600;}
+.fe-nav-item.active{background:rgba(0,120,212,0.2);color:var(--accent);font-weight:600;}
 .fe-main{flex:1;display:flex;flex-direction:column;}
-.fe-toolbar{display:flex;align-items:center;gap:6px;padding:6px;background:rgba(0,0,0,0.05);border-bottom:1px solid var(--border);}
-.fe-tool-btn{padding:4px 8px;border-radius:4px;border:none;background:transparent;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;}
-.fe-tool-btn:hover{background:var(--hover);}
-.fe-content{flex:1;padding:12px;overflow-y:auto;}
-.fe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;}
-.fe-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:6px;cursor:pointer;border:1px solid transparent;}
-.fe-item:hover{background:var(--hover);border-color:rgba(255,255,255,0.05);}
+.fe-toolbar{display:flex;align-items:center;gap:6px;padding:6px;background:rgba(35,35,35,0.4);border-bottom:1px solid var(--border);}
+.fe-btn{padding:4px 8px;border:none;background:transparent;color:#fff;cursor:pointer;border-radius:4px;font-size:12px;}
+.fe-btn:hover{background:var(--hover);}
+.fe-path{flex:1;background:rgba(0,0,0,0.2);border:1px solid var(--border);padding:4px 8px;border-radius:4px;color:#ccc;font-size:12px;}
+.fe-content{flex:1;padding:15px;overflow-y:auto;}
+.fe-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(80px, 1fr));gap:12px;}
+.fe-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:6px;cursor:pointer;text-align:center;}
+.fe-item:hover{background:var(--hover);}
+.fe-item.selected{background:rgba(0,120,212,0.25);outline:1px solid var(--accent);}
 .fe-item .fi-icon{font-size:32px;}
-.fe-item .fi-name{font-size:11px;text-align:center;word-break:break-all;color:#fff;}
+.fe-item .fi-name{font-size:11px;word-break:break-all;color:#fff;}
 
 /* ── TERMINAL ── */
-.term-body{padding:10px;font-family:'Consolas',monospace;font-size:12px;background:#0c0c0c;color:#ccc;height:100%;overflow-y:auto;display:flex;flex-direction:column;}
-.term-output{white-space:pre-wrap;line-height:1.4;}
-.term-input-line{display:flex;align-items:center;gap:4px;margin-top:4px;}
-.term-prompt{color:#6ccb5f;white-space:nowrap;}
-.term-input{flex:1;background:none;border:none;outline:none;color:#fff;font-family:inherit;font-size:inherit;}
+.term-body{padding:12px;font-family:'Consolas', 'Courier New', monospace;background:#0c0c0c;color:#00ff00;height:100%;overflow-y:auto;display:flex;flex-direction:column;}
+.term-output{flex:1;white-space:pre-wrap;overflow-y:auto;line-height:1.4;margin-bottom:8px;}
+.term-line{display:flex;align-items:center;gap:6px;}
+.term-prompt{color:#00ff00;font-weight:bold;white-space:nowrap;}
+.term-input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:13px;}
 
-/* ── NOTEPAD / CANVAS / ACTION CENTER (Sadelik İçin Temel Yapılar) ── */
-.np-textarea{flex:1;width:100%;height:100%;background:#1e1e1e;color:#fff;border:none;outline:none;padding:10px;font-family:monospace;resize:none;}
-#action-center{position:fixed;bottom:56px;right:8px;width:340px;background:rgba(25,25,25,0.95);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:10px;padding:16px;z-index:9997;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
-#action-center.open{display:block;}
-.ac-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.ac-tile{background:var(--surface2);padding:12px;border-radius:6px;text-align:center;cursor:pointer;}
-.ac-tile.on{background:var(--accent);}
+/* ── TASKBAR ── */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:48px;background:var(--taskbar-bg);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;padding:0 12px;z-index:10000;}
+#start-btn{font-size:24px;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background 0.1s;}
+#start-btn:hover{background:var(--hover);}
+#taskbar-apps{display:flex;gap:6px;position:absolute;left:50%;transform:translateX(-50%);}
+.tb-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border-radius:4px;position:relative;transition:transform 0.1s;}
+.tb-icon:hover{background:var(--hover);transform:translateY(-2px);}
+.tb-icon.running::after{content:'';position:absolute;bottom:2px;left:25%;width:50%;height:3px;background:var(--accent);border-radius:2px;}
+.tb-icon.active{background:rgba(255,255,255,0.15);}
+#taskbar-right{display:flex;align-items:center;gap:12px;font-size:12px;color:#ddd;}
+#clock{text-align:right;cursor:pointer;padding:4px;border-radius:4px;}
+#clock:hover{background:var(--hover);}
 
-/* Diğerleri İçin Hızlı Yapı */
-.center-msg{display:flex;align-items:center;justify-content:center;height:100%;font-size:14px;color:var(--text2);flex-direction:column;gap:10px;}
+/* ── START MENU ── */
+#start-menu{position:fixed;bottom:54px;left:50%;transform:translateX(-50%);width:500px;height:550px;background:rgba(25,25,25,0.92);backdrop-filter:blur(30px);border:1px solid var(--border);border-radius:8px;z-index:9998;display:none;flex-direction:column;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.5);transform:translateY(20px) translateX(-50%);opacity:0;transition:transform 0.2s ease, opacity 0.2s ease;}
+#start-menu.show{display:flex;transform:translateY(0) translateX(-50%);opacity:1;}
+#start-search{width:100%;padding:10px 15px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:20px;color:#fff;outline:none;margin-bottom:20px;}
+.start-section-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;}
+.start-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;flex:1;}
+.start-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;padding:10px;border-radius:6px;transition:background 0.1s;}
+.start-item:hover{background:var(--hover);}
+.start-item .si-icon{font-size:32px;}
+.start-item .si-name{font-size:11px;color:#fff;}
+
+/* ── CONTEXT MENU (Sağ Tık) ── */
+#context-menu{position:fixed;background:rgba(35,35,35,0.95);backdrop-filter:blur(15px);border:1px solid var(--border);border-radius:6px;padding:4px;min-width:160px;z-index:100000;display:none;box-shadow:0 5px 20px rgba(0,0,0,0.4);}
+.cm-item{padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:4px;color:#fff;font-size:12px;}
+.cm-item:hover{background:var(--accent);}
+.cm-sep{height:1px;background:var(--border);margin:4px 0;}
+
+/* ── WALLPAPER CHANGER APP ── */
+.wp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:15px;height:100%;overflow-y:auto;}
+.wp-thumb{width:100%;height:100px;border-radius:6px;background-size:cover;background-position:center;cursor:pointer;border:2px solid transparent;transition:transform 0.1s;}
+.wp-thumb:hover{transform:scale(1.03);}
+.wp-thumb.active{border-color:var(--accent);}
+
+/* ── NOTEPAD ── */
+.notepad-text{width:100%;height:100%;background:transparent;border:none;outline:none;color:#fff;padding:12px;font-family:monospace;font-size:14px;resize:none;}
 </style>
 </head>
 <body>
 
+<!-- BOOT SCREEN -->
 <div id="boot">
   <div id="boot-logo">💻</div>
   <div id="boot-spinner">
-    <div class="bs-dot"></div><div class="bs-dot"></div><div class="bs-dot"></div><div class="bs-dot"></div><div class="bs-dot"></div>
+    <div class="bs-dot"></div>
+    <div class="bs-dot"></div>
+    <div class="bs-dot"></div>
   </div>
 </div>
 
+<!-- LOCK SCREEN -->
 <div id="lockscreen">
   <div id="lockscreen-time">00:00</div>
   <div id="lockscreen-date">1 Ocak Pazartesi</div>
-  <div id="lockscreen-hint">Giriş yapmak için tıklayın</div>
+  <div id="lockscreen-hint">Masaüstüne geçmek için tıklayın</div>
 </div>
 
+<!-- CONTEXT MENU (Sağ Tık) -->
+<div id="context-menu"></div>
+
+<!-- DESKTOP -->
 <div id="desktop">
   <div id="desktop-overlay"></div>
-  <div id="selection-box"></div>
+  <div id="drag-select"></div>
   <div id="desktop-icons"></div>
-
-  <div id="desktop-widgets">
-    <div class="dw-card">
-      <div class="weather-city" id="w-city">Antalya, TR</div>
-      <div class="weather-main">
-        <span class="weather-icon">🌧️</span>
-        <span class="weather-temp">18°C</span>
-        <span class="weather-desc">Yağmurlu</span>
-      </div>
-      <div class="weather-row">
-        <span>💧 %80</span><span>💨 20 km/s</span><span>👁️ 10 km</span>
-      </div>
-    </div>
-    <div class="dw-card">
-      <div class="cal-header"><div class="cal-month" id="cal-m">Mayıs 2026</div></div>
-      <div class="cal-grid" id="cal-g"></div>
-    </div>
-  </div>
 </div>
 
-<div id="taskbar">
-  <div id="taskbar-left"></div>
-  <div id="taskbar-center">
-    <button id="start-btn">🪟</button>
-    <div id="taskbar-apps"></div>
-  </div>
-  <div id="taskbar-right">
-    <div class="tray-icon">📶</div><div class="tray-icon">🔊</div><div class="tray-icon" id="action-center-btn">⚙️</div>
-    <div id="clock-widget">00:00<br>22.05.2026</div>
-  </div>
-</div>
-
+<!-- START MENU -->
 <div id="start-menu">
-  <div id="start-search-wrap">
-    <input type="text" id="start-search" placeholder="Uygulamaları, belgeleri arayın...">
-  </div>
-  <div id="start-pinned">
-    <h4>Sabitlenmiş</h4>
-    <div class="start-grid" id="start-menu-grid"></div>
-  </div>
-  <div id="start-bottom">
-    <div class="start-user">
-      <div class="start-avatar">O</div>
-      <div class="start-username">Osman</div>
-    </div>
-    <div class="start-power-btns">
-      <button class="start-pw-btn" id="lock-btn">🔒</button>
-    </div>
-  </div>
+  <input type="text" id="start-search" placeholder="Uygulama, dosya ara...">
+  <div class="start-section-title">Sabitlenmiş Uygulamalar</div>
+  <div class="start-grid" id="start-apps-grid"></div>
 </div>
 
-<div id="action-center">
-  <div class="ac-grid">
-    <div class="ac-tile on">🌐<br><span style="font-size:10px">Wi-Fi</span></div>
-    <div class="ac-tile on">🔊<br><span style="font-size:10px">Ses</span></div>
-    <div class="ac-tile" id="bg-change-tile">🖼️<br><span style="font-size:10px">Duvar Kağıdı</span></div>
+<!-- TASKBAR -->
+<div id="taskbar">
+  <div id="start-btn">🪟</div>
+  <div id="taskbar-apps"></div>
+  <div id="taskbar-right">
+    <div id="clock">00:00<br>01.01.2026</div>
   </div>
-</div>
-
-<div id="ctx-menu">
-  <div class="ctx-item" onclick="refreshDesktop()"><span class="ci-icon">🔄</span>Yenile</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" onclick="changeWallpaper()"><span class="ci-icon">🖼️</span>Arka Planı Değiştir</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" onclick="createFileSystemItem('dir')"><span class="ci-icon">📁</span>Yeni Klasör</div>
-  <div class="ctx-item" onclick="createFileSystemItem('txt')"><span class="ci-icon">📄</span>Yeni Metin Belgesi</div>
 </div>
 
 <script>
-/* ── SANAL DOSYA SİSTEMİ VERİLERİ (VFS) ── */
-let vfs = {
-  "root": {
-    "Masaüstü": { type: "dir", content: {} },
-    "Belgeler": { type: "dir", content: { "notlar.txt": { type: "txt", content: "CloudOS Pro Sistemine Hoş Geldiniz kanka!" } } },
-    "İndirilenler": { type: "dir", content: {} }
-  }
+// --- SİSTEM DOSYA YAPISI (VFS) ---
+let fs = {
+  "Masaüstü": {
+    "Beni Oku.txt": { type: "file", content: "CloudOS Dünyasına Hoş Geldin!\nBu sistem tamamen saf JavaScript ile yazılmıştır.\nMavi seçim kutusunu test etmek için sol tıka basılı tutup sürükle!" },
+    "Notlarım.txt": { type: "file", content: "Yapılacaklar:\n1. JavaScript kasılacak.\n2. Bu OS geliştirilecek." }
+  },
+  "Belgeler": {
+    "Proje_Planı.txt": { type: "file", content: "Gizli proje bulut işletim sistemi aşamaları..." }
+  },
+  "İndirilenler": {},
+  "Resimler": {}
 };
-let currentPath = ["root", "Masaüstü"];
 
-/* Uygulama Tanımlamaları */
+let currentPath = "Masaüstü";
+
+// --- UYGULAMA TANIMLARI ---
 const APPS = {
-  chrome: { name: "Chrome", emoji: "🌐", width: 800, height: 500, content: 'browser' },
-  explorer: { name: "Dosya Gezgini", emoji: "📁", width: 750, height: 450, content: 'explorer' },
-  notepad: { name: "Not Defteri", emoji: "📝", width: 500, height: 400, content: 'notepad' },
-  terminal: { name: "Terminal", emoji: "💻", width: 600, height: 400, content: 'terminal' },
-  paint: { name: "Paint", emoji: "🎨", width: 700, height: 480, content: 'paint' },
-  settings: { name: "Ayarlar", emoji: "⚙️", width: 650, height: 450, content: 'settings' }
+  fe: { name: "Dosya Gezgini", emoji: "📁", init: createFileExplorer },
+  term: { name: "Terminal", emoji: "🪟", init: createTerminal },
+  notepad: { name: "Not Defteri", emoji: "📝", init: createNotepad },
+  wp: { name: "Duvar Kağıdı", emoji: "🎨", init: createWallpaperChanger }
 };
 
-/* Masaüstü Başlangıç İkon Yerleşim Düzeni */
-let desktopItems = [
-  { id: "chrome", name: "Chrome", emoji: "🌐", type: "app", x: 20, y: 20 },
-  { id: "explorer", name: "Dosya Gezgini", emoji: "📁", type: "app", x: 20, y: 120 },
-  { id: "notepad", name: "Not Defteri", emoji: "📝", type: "app", x: 20, y: 220 },
-  { id: "terminal", name: "Terminal", emoji: "💻", type: "app", x: 20, y: 320 },
-  { id: "paint", name: "Paint", emoji: "🎨", type: "app", x: 20, y: 420 }
-];
+// Masaüstü İkon Konum Veritabanı
+let iconPositions = {
+  "fe": { top: 20, left: 20 },
+  "term": { top: 120, left: 20 },
+  "notepad": { top: 220, left: 20 },
+  "wp": { top: 320, left: 20 }
+};
 
-/* ── SİSTEM AÇILIŞ AKIŞI ── */
+let activeWindows = [];
+let focusedWindow = null;
+
+// --- BOOT & LOCK SCREEN YÖNETİMİ ---
 setTimeout(() => {
-  document.getElementById("boot").style.opacity = 0;
-  setTimeout(() => {
-    document.getElementById("boot").style.display = "none";
-    document.getElementById("lockscreen").style.display = "flex";
-  }, 800);
+  const boot = document.getElementById('boot');
+  boot.style.opacity = '0';
+  setTimeout(() => boot.style.display = 'none', 800);
+  
+  const lock = document.getElementById('lockscreen');
+  lock.style.display = 'flex';
 }, 2500);
 
-document.getElementById("lockscreen").addEventListener("click", () => {
-  document.getElementById("lockscreen").style.transform = "translateY(-100vh)";
-  document.getElementById("lockscreen").style.opacity = 0;
-  setTimeout(() => {
-    document.getElementById("lockscreen").style.display = "none";
-    document.getElementById("desktop").style.display = "block";
-    renderDesktop();
-  }, 500);
+document.getElementById('lockscreen').addEventListener('click', function() {
+  this.style.transform = 'translateY(-100%)';
+  this.style.opacity = '0';
+  setTimeout(() => this.style.display = 'none', 500);
+  document.getElementById('desktop').style.display = 'block';
 });
 
-document.getElementById("lock-btn").addEventListener("click", () => {
-  document.getElementById("start-menu").classList.remove("open");
-  const ls = document.getElementById("lockscreen");
-  ls.style.display = "flex";
-  setTimeout(() => { ls.style.transform = "translateY(0)"; ls.style.opacity = 1; }, 5);
-});
-
-/* ── SAAT & TAKVİM GÜNCELLEME ── */
+// Saat & Tarih Güncelleme
 function updateClock() {
-  const d = new Date();
-  const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+  const taskbarDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   
-  document.getElementById("clock-widget").innerHTML = `${timeStr}<br>${dateStr}`;
-  document.getElementById("lockscreen-time").innerText = timeStr;
-  document.getElementById("lockscreen-date").innerText = d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('lockscreen-time').innerText = timeStr;
+  document.getElementById('lockscreen-date').innerText = dateStr;
+  document.getElementById('clock').innerHTML = `${timeStr}<br>${taskbarDate}`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-function buildCalendar() {
-  const grid = document.getElementById("cal-g");
-  grid.innerHTML = "";
-  const labels = ["Pt", "Sa", "Çş", "Pr", "Cu", "Ct", "Pz"];
-  labels.forEach(l => grid.innerHTML += `<div class="cal-day-label">${l}</div>`);
-  for (let i = 1; i <= 31; i++) {
-    let cls = i === 22 ? "cal-day today" : "cal-day";
-    grid.innerHTML += `<div class="${cls}">${i}</div>`;
-  }
+// --- MASAÜSTÜ İKONLARINI YERLEŞTİRME VE DRAG-DROP ---
+function renderDesktopIcons() {
+  const container = document.getElementById('desktop-icons');
+  container.innerHTML = '';
+  
+  Object.keys(APPS).forEach(key => {
+    const app = APPS[key];
+    const icon = document.createElement('div');
+    icon.className = 'desk-icon';
+    icon.dataset.app = key;
+    
+    // Konumlandırma
+    const pos = iconPositions[key] || { top: 20, left: 20 };
+    icon.style.top = pos.top + 'px';
+    icon.style.left = pos.left + 'px';
+    
+    icon.innerHTML = `<span class="di-emoji">${app.emoji}</span><span>${app.name}</span>`;
+    
+    // Çift Tıklama ile Açılma Animasyonu ve Aksiyonu
+    icon.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      icon.style.transform = "scale(1.2)";
+      setTimeout(() => icon.style.transform = "scale(1)", 150);
+      openWindow(key);
+    });
+
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.desk-icon').forEach(i => i.classList.remove('selected'));
+      icon.classList.add('selected');
+    });
+    
+    // Sürükle ve Bırak (Dinamik Taşıma)
+    let isDragging = false;
+    let offsetX, offsetY;
+    
+    icon.addEventListener('mousedown', (e) => {
+      if(e.button !== 0) return;
+      isDragging = true;
+      offsetX = e.clientX - icon.offsetLeft;
+      offsetY = e.clientY - icon.offsetTop;
+      icon.style.transition = 'none';
+      e.stopPropagation();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      let x = e.clientX - offsetX;
+      let y = e.clientY - offsetY;
+      
+      // Sınırlar dışına taşmasını engelle
+      x = Math.max(10, Math.min(window.innerWidth - 90, x));
+      y = Math.max(10, Math.min(window.innerHeight - 140, y));
+      
+      icon.style.left = x + 'px';
+      icon.style.top = y + 'px';
+      iconPositions[key] = { top: y, left: x };
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        icon.style.transition = 'background 0.1s, border 0.1s';
+      }
+    });
+    
+    container.appendChild(icon);
+  });
+
+  // Sanal Dosyaları Masaüstüne Ekleme
+  Object.keys(fs["Masaüstü"]).forEach((fileName, index) => {
+    const fileData = fs["Masaüstü"][fileName];
+    const icon = document.createElement('div');
+    icon.className = 'desk-icon';
+    icon.style.left = `120px`;
+    icon.style.top = `${20 + (index * 100)}px`;
+    
+    icon.innerHTML = `<span class="di-emoji">📝</span><span>${fileName}</span>`;
+    icon.addEventListener('dblclick', () => {
+      openWindow('notepad', fileName);
+    });
+    container.appendChild(icon);
+  });
 }
-buildCalendar();
 
-/* ── MASAÜSTÜ SEÇİM KUTUSU (MARQUEE SELECTION) ── */
-let selectionBox = document.getElementById("selection-box");
-let isSelecting = false, startX = 0, startY = 0;
+// --- MAVİ SEÇİM KUTUSU (CLASSIC WINDOWS SELECTION BOX) ---
+let selection = document.getElementById('drag-select');
+let startX, startY;
+let isSelecting = false;
 
-document.getElementById("desktop").addEventListener("mousedown", (e) => {
-  if (e.target.id !== "desktop" && e.target.id !== "desktop-overlay") return;
+document.getElementById('desktop').addEventListener('mousedown', function(e) {
+  if (e.target !== this && e.target.id !== 'desktop-overlay') return;
   if (e.button !== 0) return; // Sadece sol tık
+  
+  document.querySelectorAll('.desk-icon').forEach(i => i.classList.remove('selected'));
+  closeStartMenu();
+  
   isSelecting = true;
   startX = e.clientX;
   startY = e.clientY;
-  selectionBox.style.left = startX + "px";
-  selectionBox.style.top = startY + "px";
-  selectionBox.style.width = "0px";
-  selectionBox.style.height = "0px";
-  selectionBox.style.display = "block";
   
-  // Seçimleri temizle
-  document.querySelectorAll('.desk-icon').forEach(i => i.classList.remove('selected'));
+  selection.style.left = startX + 'px';
+  selection.style.top = startY + 'px';
+  selection.style.width = '0px';
+  selection.style.height = '0px';
+  selection.style.display = 'block';
 });
 
-document.addEventListener("mousemove", (e) => {
+document.addEventListener('mousemove', function(e) {
   if (!isSelecting) return;
+  
   let currentX = e.clientX;
   let currentY = e.clientY;
   
   let width = Math.abs(currentX - startX);
   let height = Math.abs(currentY - startY);
-  let left = Math.min(currentX, startX);
-  let top = Math.min(currentY, startY);
   
-  selectionBox.style.left = left + "px";
-  selectionBox.style.top = top + "px";
-  selectionBox.style.width = width + "px";
-  selectionBox.style.height = height + "px";
-
-  // Çakışan ikonları bul ve seçili yap
+  let left = (currentX < startX) ? currentX : startX;
+  let top = (currentY < startY) ? currentY : startY;
+  
+  selection.style.left = left + 'px';
+  selection.style.top = top + 'px';
+  selection.style.width = width + 'px';
+  selection.style.height = height + 'px';
+  
+  // Kutunun içindeki ikonları algıla ve seç
   document.querySelectorAll('.desk-icon').forEach(icon => {
     let r = icon.getBoundingClientRect();
     if (r.left < left + width && r.right > left && r.top < top + height && r.bottom > top) {
@@ -375,505 +377,421 @@ document.addEventListener("mousemove", (e) => {
   });
 });
 
-document.addEventListener("mouseup", () => {
-  isSelecting = false;
-  selectionBox.style.display = "none";
-});
-
-/* ── İKON SÜRÜKLE BIRAK SİSTEMİ (DRAG & DROP) ── */
-let draggedIcon = null;
-let offsetX = 0, offsetY = 0;
-
-function makeIconDraggable(el, item) {
-  el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-    draggedIcon = { el, item };
-    offsetX = e.clientX - el.offsetLeft;
-    offsetY = e.clientY - el.offsetTop;
-    document.querySelectorAll('.desk-icon').forEach(i => i.classList.remove('selected'));
-    el.classList.add('selected');
-    e.stopPropagation();
-  });
-}
-
-document.addEventListener("mousemove", (e) => {
-  if (!draggedIcon) return;
-  let x = e.clientX - offsetX;
-  let y = e.clientY - offsetY;
-  
-  // Sınır koruması
-  x = Math.max(10, Math.min(window.innerWidth - 90, x));
-  y = Math.max(10, Math.min(window.innerHeight - 140, y));
-  
-  draggedIcon.el.style.left = x + "px";
-  draggedIcon.el.style.top = y + "px";
-  draggedIcon.item.x = x;
-  draggedIcon.item.y = y;
-});
-
-document.addEventListener("mouseup", () => { draggedIcon = null; });
-
-/* ── MASAÜSTÜ OLUŞTURMA & RENDERLAMA ── */
-function renderDesktop() {
-  const container = document.getElementById("desktop-icons");
-  container.innerHTML = "";
-  
-  // Sabit ve sanal masaüstü dosyalarını birleştir
-  let itemsToRender = [...desktopItems];
-  let desktopVFS = vfs.root["Masaüstü"].content;
-  
-  let index = 0;
-  for (let key in desktopVFS) {
-    let existing = desktopItems.find(i => i.id === key);
-    if (!existing) {
-      itemsToRender.push({
-        id: key,
-        name: key,
-        emoji: desktopVFS[key].type === "dir" ? "📁" : "📄",
-        type: desktopVFS[key].type,
-        x: 120,
-        y: 20 + (index * 95)
-      });
-      index++;
-    }
-  }
-
-  itemsToRender.forEach(item => {
-    const el = document.createElement("div");
-    el.className = "desk-icon";
-    el.style.left = item.x + "px";
-    el.style.top = item.y + "px";
-    el.innerHTML = `<span class="di-emoji">${item.emoji}</span><span>${item.name}</span>`;
-    
-    // Çift Tıklama Mantığı (Windows Tarzı)
-    el.addEventListener("dblclick", () => {
-      if (item.type === "app") {
-        openWindow(item.id);
-      } else if (item.type === "dir") {
-        currentPath = ["root", "Masaüstü", item.name];
-        openWindow("explorer");
-      } else if (item.type === "txt") {
-        openWindow("notepad", item.name);
-      }
-    });
-
-    el.addEventListener("click", (e) => {
-      document.querySelectorAll('.desk-icon').forEach(i => i.classList.remove('selected'));
-      el.classList.add('selected');
-      e.stopPropagation();
-    });
-
-    makeIconDraggable(el, item);
-    container.appendChild(el);
-  });
-}
-
-/* ── SAĞ TIK CONTEXT MENU YÖNETİMİ ── */
-let rightClickCoords = { x: 0, y: 0 };
-document.getElementById("desktop").addEventListener("contextmenu", (e) => {
-  e.preventDefault();
-  const menu = document.getElementById("ctx-menu");
-  menu.style.left = e.clientX + "px";
-  menu.style.top = e.clientY + "px";
-  menu.style.display = "block";
-  rightClickCoords = { x: e.clientX, y: e.clientY };
-});
-
-document.addEventListener("click", () => {
-  document.getElementById("ctx-menu").style.display = "none";
-});
-
-function refreshDesktop() {
-  renderDesktop();
-}
-
-const wallpapers = [
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1920&q=80',
-  'https://images.unsplash.com/photo-1604871000636-074fa5117945?w=1920&q=80',
-  'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1920&q=80'
-];
-let wpIdx = 0;
-function changeWallpaper() {
-  wpIdx = (wpIdx + 1) % wallpapers.length;
-  document.getElementById("desktop").style.backgroundImage = `url('${wallpapers[wpIdx]}')`;
-}
-document.getElementById("bg-change-tile").addEventListener("click", changeWallpaper);
-
-function createFileSystemItem(type) {
-  let name = type === "dir" ? "Yeni Klasör" : "Yeni Metin Belgesi.txt";
-  let target = vfs.root["Masaüstü"].content;
-  
-  // Benzersiz isim koruması
-  let finalName = name;
-  let counter = 1;
-  while (target[finalName]) {
-    finalName = type === "dir" ? `Yeni Klasör (${counter})` : `Yeni Metin Belgesi (${counter}).txt`;
-    counter++;
-  }
-  
-  target[finalName] = {
-    type: type,
-    content: type === "dir" ? {} : "Buraya yazın..."
-  };
-  renderDesktop();
-}
-
-/* ── BAŞLAT MENÜSÜ & ACTION CENTER GÖSTERİMİ ── */
-const startBtn = document.getElementById("start-btn");
-const startMenu = document.getElementById("start-menu");
-
-startBtn.addEventListener("click", (e) => {
-  startMenu.classList.toggle("open");
-  e.stopPropagation();
-});
-
-document.getElementById("action-center-btn").addEventListener("click", (e) => {
-  document.getElementById("action-center").classList.toggle("open");
-  e.stopPropagation();
-});
-
-document.addEventListener("click", (e) => {
-  if (!startMenu.contains(e.target) && e.target !== startBtn) startMenu.classList.remove("open");
-  if (!document.getElementById("action-center").contains(e.target) && e.target !== document.getElementById("action-center-btn")) {
-    document.getElementById("action-center").classList.remove("open");
+document.addEventListener('mouseup', function() {
+  if (isSelecting) {
+    isSelecting = false;
+    selection.style.display = 'none';
   }
 });
 
-// Başlat Menüsü İkonlarını İnşa Et
-const startGrid = document.getElementById("start-menu-grid");
-for (let key in APPS) {
-  startGrid.innerHTML += `
-    <div class="start-app" onclick="openWindow('${key}'); document.getElementById('start-menu').classList.remove('open');">
-      <div class="sa-icon">${APPS[key].emoji}</div>
-      <div class="sa-name">${APPS[key].name}</div>
-    </div>
-  `;
-}
-
-/* ── PENCERE VE GÖREV YÖNETİMİ SİSTEMİ ── */
-let windows = {};
-
+// --- PENCERE YÖNETİM SİSTEMİ (WINDOW MANAGER) ---
 function openWindow(appKey, fileTarget = null) {
-  if (windows[appKey]) {
-    // Zaten açıksa odakla veya minimize ise büyüt
-    let winEl = document.getElementById(`win-${appKey}`);
-    if (winEl.classList.contains("minimized-anim")) {
-      winEl.classList.remove("minimized-anim");
+  const app = APPS[appKey];
+  
+  // Eğer pencere zaten açıksa ona odaklan
+  let existingWin = document.getElementById(`win-${appKey}`);
+  if (existingWin) {
+    existingWin.classList.remove('minimized');
+    focusWindow(existingWin);
+    if(fileTarget && appKey === 'notepad') {
+      existingWin.querySelector('textarea').value = fs[currentPath][fileTarget].content;
+      existingWin.querySelector('.win-title').innerText = `${fileTarget} - Not Defteri`;
     }
-    focusWindow(appKey);
     return;
   }
-
-  let config = APPS[appKey];
-  let winId = `win-${appKey}`;
   
-  let win = document.createElement("div");
-  win.id = winId;
-  win.className = "window";
-  win.style.width = config.width + "px";
-  win.style.height = config.height + "px";
-  win.style.left = (100 + Object.keys(windows).length * 30) + "px";
-  win.style.top = (80 + Object.keys(windows).length * 20) + "px";
+  const win = document.createElement('div');
+  win.id = `win-${appKey}`;
+  win.className = 'window';
+  win.style.width = '650px';
+  win.style.height = '450px';
+  // Ekranın ortasında başlat
+  win.style.top = `${100 + (activeWindows.length * 25)}px`;
+  win.style.left = `${200 + (activeWindows.length * 25)}px`;
   
   win.innerHTML = `
-    <div class="win-header" onmousedown="startWinDrag(event, '${appKey}')">
-      <div class="win-icon">${config.emoji}</div>
-      <div class="win-title">${config.name} ${fileTarget ? ' - ' + fileTarget : ''}</div>
+    <div class="win-header">
+      <div class="win-icon">${app.emoji}</div>
+      <div class="win-title">${app.name} ${fileTarget ? ' - ' + fileTarget : ''}</div>
       <div class="win-controls">
-        <button class="win-ctrl" onclick="minimizeWindow('${appKey}')">➖</button>
-        <button class="win-ctrl" onclick="maximizeWindow('${appKey}')">🔲</button>
-        <button class="win-ctrl close" onclick="closeWindow('${appKey}')">❌</button>
+        <button class="win-ctrl min">─</button>
+        <button class="win-ctrl max">🗖</button>
+        <button class="win-ctrl close">✕</button>
       </div>
     </div>
-    <div class="win-body">${getAppContent(appKey, fileTarget)}</div>
-    <div class="resize-handle" onmousedown="startWinResize(event, '${appKey}')"></div>
+    <div class="win-body"></div>
+    <div class="resize-handle"></div>
   `;
   
-  document.body.appendChild(win);
+  document.getElementById('desktop').appendChild(win);
+  app.init(win.querySelector('.win-body'), fileTarget);
   
-  // Harika Giriş Animasyonu
-  setTimeout(() => win.classList.add("open-anim"), 10);
-
-  win.addEventListener("mousedown", () => focusWindow(appKey));
+  // Animasyon için tetikleyici
+  setTimeout(() => win.classList.add('show'), 10);
   
-  windows[appKey] = { isMaximized: false };
-  addToTaskbar(appKey);
-  focusWindow(appKey);
-
-  // Uygulama Özel Tetikleyicileri
-  if (appKey === 'terminal') initTerminal(winId);
+  // Pencere Eventleri
+  win.addEventListener('mousedown', () => focusWindow(win));
+  win.querySelector('.close').addEventListener('click', (e) => { e.stopPropagation(); closeWindow(win, appKey); });
+  win.querySelector('.min').addEventListener('click', (e) => { e.stopPropagation(); minimizeWindow(win); });
+  win.querySelector('.max').addEventListener('click', (e) => { e.stopPropagation(); toggleMaximize(win); });
+  
+  setupWindowDrag(win);
+  setupWindowResize(win);
+  
+  activeWindows.push(appKey);
+  renderTaskbarApps();
+  focusWindow(win);
 }
 
-function getAppContent(key, fileTarget) {
-  if (key === 'explorer') {
-    return `
-      <div class="fe-wrap">
-        <div class="fe-sidebar">
-          <div class="fe-nav-item active" onclick="changeFEDir('Masaüstü')">📁 Masaüstü</div>
-          <div class="fe-nav-item" onclick="changeFEDir('Belgeler')">📁 Belgeler</div>
-          <div class="fe-nav-item" onclick="changeFEDir('İndirilenler')">📁 İndirilenler</div>
+function focusWindow(win) {
+  document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
+  win.classList.add('focused');
+  focusedWindow = win;
+}
+
+function closeWindow(win, appKey) {
+  win.classList.remove('show');
+  setTimeout(() => {
+    win.remove();
+    activeWindows = activeWindows.filter(k => k !== appKey);
+    renderTaskbarApps();
+  }, 180);
+}
+
+function minimizeWindow(win) {
+  win.classList.add('minimized');
+}
+
+function toggleMaximize(win) {
+  win.classList.toggle('maximized');
+}
+
+// Pencere Taşıma Fonksiyonu
+function setupWindowDrag(win) {
+  const header = win.querySelector('.win-header');
+  let isDragging = false;
+  let offsetX, offsetY;
+  
+  header.addEventListener('mousedown', (e) => {
+    if(win.classList.contains('maximized') || e.target.classList.contains('win-ctrl')) return;
+    isDragging = true;
+    offsetX = e.clientX - win.offsetLeft;
+    offsetY = e.clientY - win.offsetTop;
+    focusWindow(win);
+  });
+  
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    win.style.left = (e.clientX - offsetX) + 'px';
+    win.style.top = (e.clientY - offsetY) + 'px';
+  });
+  
+  document.addEventListener('mouseup', () => isDragging = false);
+}
+
+// Pencere Boyutlandırma
+function setupWindowResize(win) {
+  const handle = win.querySelector('.resize-handle');
+  let isResizing = false;
+  let startWidth, startHeight, startX, startY;
+  
+  handle.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    startWidth = win.offsetWidth;
+    startHeight = win.offsetHeight;
+    startX = e.clientX;
+    startY = e.clientY;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    win.style.width = (startWidth + (e.clientX - startX)) + 'px';
+    win.style.height = (startHeight + (e.clientY - startY)) + 'px';
+  });
+  
+  document.addEventListener('mouseup', () => isResizing = false);
+}
+
+// --- DOSYA GEZGİNİ (FILE EXPLORER CODES) ---
+function createFileExplorer(body) {
+  body.innerHTML = `
+    <div class="fe-wrap">
+      <div class="fe-sidebar">
+        <div class="fe-nav-item" data-path="Masaüstü">💻 Masaüstü</div>
+        <div class="fe-nav-item" data-path="Belgeler">📄 Belgeler</div>
+        <div class="fe-nav-item" data-path="İndirilenler">📥 İndirilenler</div>
+        <div class="fe-nav-item" data-path="Resimler">🖼️ Resimler</div>
+      </div>
+      <div class="fe-main">
+        <div class="fe-toolbar">
+          <button class="fe-btn fe-back">⬅ Geri</button>
+          <button class="fe-btn fe-new-file">+ Yeni Dosya</button>
+          <div class="fe-path">Bu Bilgisayar > Masaüstü</div>
         </div>
-        <div class="fe-main">
-          <div class="fe-toolbar">
-            <button class="fe-tool-btn" onclick="feNewItem('dir')">➕ Yeni Klasör</button>
-            <button class="fe-tool-btn" onclick="feNewItem('txt')">📄 Yeni Metin</button>
-          </div>
-          <div class="fe-content"><div class="fe-grid" id="fe-grid-content"></div></div>
+        <div class="fe-content">
+          <div class="fe-grid"></div>
         </div>
       </div>
-    `;
+    </div>
+  `;
+  
+  const grid = body.querySelector('.fe-grid');
+  const pathBar = body.querySelector('.fe-path');
+  
+  function updateExplorerView() {
+    grid.innerHTML = '';
+    pathBar.innerText = `Bu Bilgisayar > ${currentPath}`;
+    
+    let currentDir = fs[currentPath];
+    Object.keys(currentDir).forEach(name => {
+      const item = document.createElement('div');
+      item.className = 'fe-item';
+      const isFile = currentDir[name].type === 'file';
+      item.innerHTML = `
+        <div class="fi-icon">${isFile ? '📝' : '📁'}</div>
+        <div class="fi-name">${name}</div>
+      `;
+      
+      // Tek Tıkla Seçim / Çift Tıkla Açılma Mantığı (Dosya gezgininde tek tık açma opsiyonu)
+      item.addEventListener('click', () => {
+        if(isFile) {
+          openWindow('notepad', name);
+        }
+      });
+      grid.appendChild(item);
+    });
   }
-  if (key === 'notepad') {
-    let content = "Kanka yazmaya başla...";
-    if (fileTarget) {
-      let currentDir = vfs.root[currentPath[2]] ? vfs.root[currentPath[2]].content : vfs.root["Masaüstü"].content;
-      if (currentDir[fileTarget]) content = currentDir[fileTarget].content;
+  
+  body.querySelectorAll('.fe-nav-item').forEach(btn => {
+    btn.addEventListener('click', function() {
+      body.querySelectorAll('.fe-nav-item').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentPath = this.dataset.path;
+      updateExplorerView();
+    });
+  });
+  
+  body.querySelector('.fe-new-file').addEventListener('click', () => {
+    let name = prompt("Dosya adı girin (.txt):", "Yeni Metin Belgesi.txt");
+    if(name) {
+      fs[currentPath][name] = { type: "file", content: "Yeni dosya içeriği" };
+      updateExplorerView();
+      renderDesktopIcons();
     }
-    return `<textarea class="np-textarea">${content}</textarea>`;
-  }
-  if (key === 'terminal') {
-    return `
-      <div class="term-body">
-        <div class="term-output" id="term-out">CloudOS Kernel Terminal v1.0.0\nYardım için 'help' yaz kanka.\n</div>
-        <div class="term-input-line">
-          <span class="term-prompt">user@cloudos:~#</span>
-          <input type="text" class="term-input" id="term-in" autofocus>
-        </div>
+  });
+  
+  updateExplorerView();
+}
+
+// --- FULL FONKSİYONEL SÜPER TERMINAL ---
+function createTerminal(body) {
+  body.innerHTML = `
+    <div class="term-body">
+      <div class="term-output">CloudOS Command Line v1.0.0\nYardım için 'help' yazın.\n\n</div>
+      <div class="term-line">
+        <span class="term-prompt">C:\\${currentPath}></span>
+        <input type="text" class="term-input" autofocus>
       </div>
-    `;
-  }
-  if (key === 'chrome') {
-    return `<iframe src="https://www.google.com/webhp?igu=1" style="width:100%; height:100%; border:none;"></iframe>`;
-  }
-  return `<div class="center-msg"><span>${APPS[key].emoji}</span> ${APPS[key].name} uygulaması tamamen hazır durumda!</div>`;
+    </div>
+  `;
+  
+  const input = body.querySelector('.term-input');
+  const output = body.querySelector('.term-output');
+  
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const cmdText = input.value.trim();
+      if(!cmdText) return;
+      
+      output.innerText += `C:\\${currentPath}> ${cmdText}\n`;
+      const args = cmdText.split(' ');
+      const command = args[0].toLowerCase();
+      
+      switch(command) {
+        case 'help':
+          output.innerText += "Kullanılabilir Komutlar:\n - ls : Dosyaları listeler\n - cd [klasör] : Dizin değiştirir\n - mkdir [isim] : Klasör oluşturur\n - touch [isim] : Dosya oluşturur\n - rm [isim] : Dosya/Klasör siler\n - neofetch : Sistem özelliklerini basar\n - clear : Ekranı temizler\n - matrix : Matrix modunu açar\n";
+          break;
+        case 'ls':
+          let items = Object.keys(fs[currentPath]);
+          output.innerText += items.length ? items.join('    ') + '\n' : 'Klasör boş.\n';
+          break;
+        case 'cd':
+          if(fs[args[1]] && args[1] !== 'type') {
+            currentPath = args[1];
+            body.querySelector('.term-prompt').innerText = `C:\\${currentPath}>`;
+          } else {
+            output.innerText += `Hata: ${args[1]} adında bir dizin bulunamadı.\n`;
+          }
+          break;
+        case 'mkdir':
+          if(args[1]) {
+            fs[currentPath][args[1]] = { type: "dir" };
+            output.innerText += `Klasör oluşturuldu: ${args[1]}\n`;
+          }
+          break;
+        case 'touch':
+          if(args[1]) {
+            fs[currentPath][args[1]] = { type: "file", content: "" };
+            output.innerText += `Dosya oluşturuldu: ${args[1]}\n`;
+            renderDesktopIcons();
+          }
+          break;
+        case 'clear':
+          output.innerText = '';
+          break;
+        case 'neofetch':
+          output.innerText += `🌐 OS: CloudOS v2026.1\n💻 Kernel: JavaScript ES12\n⏱️ Uptime: Sorunsuz Aktif\n🖥️ Çözünürlük: ${window.innerWidth}x${window.innerHeight}\n🧠 RAM: 16GB Virtual WebRAM\n`;
+          break;
+        case 'matrix':
+          output.innerText += "Matrix Modu Aktif Ediliyor...\nWake up, Neo...\nThe Matrix has you...\nFollow the white rabbit.\n";
+          break;
+        default:
+          output.innerText += `'${command}' geçerli bir komut değil.\n`;
+      }
+      
+      input.value = '';
+      body.querySelector('.term-body').scrollTop = body.querySelector('.term-body').scrollHeight;
+    }
+  });
 }
 
-/* ── PENCERE AKSİYONLARI (TAŞIMA, ODALAMA, KAPATMA) ── */
-let dragWin = null, resizeWin = null;
-let winStartX, winStartY, winStartW, winStartH, winStartL, winStartT;
-
-function startWinDrag(e, key) {
-  if (e.target.classList.contains('win-ctrl')) return;
-  dragWin = key;
-  let el = document.getElementById(`win-${key}`);
-  winStartX = e.clientX;
-  winStartY = e.clientY;
-  winStartL = el.offsetLeft;
-  winStartT = el.offsetTop;
-  focusWindow(key);
+// --- NOTEPAD (NOT DEFTERİ) ---
+function createNotepad(body, fileTarget = null) {
+  let initContent = fileTarget ? fs[currentPath][fileTarget].content : "Burası boş bir not defteridir.";
+  body.innerHTML = `<textarea class="notepad-text">${initContent}</textarea>`;
+  
+  body.querySelector('textarea').addEventListener('input', function() {
+    if(fileTarget && fs[currentPath][fileTarget]) {
+      fs[currentPath][fileTarget].content = this.value;
+    }
+  });
 }
 
-function startWinResize(e, key) {
-  resizeWin = key;
-  let el = document.getElementById(`win-${key}`);
-  winStartX = e.clientX;
-  winStartY = e.clientY;
-  winStartW = el.offsetWidth;
-  winStartH = el.offsetHeight;
-  focusWindow(key);
-  e.preventDefault();
+// --- DUVAR KAĞIDI DEĞİŞTİRİCİ ---
+function createWallpaperChanger(body) {
+  const wallpapers = [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80',
+    'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=1920&q=80',
+    'https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=1920&q=80',
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80'
+  ];
+  
+  const wrap = document.createElement('div');
+  wrap.className = 'wp-grid';
+  
+  wallpapers.forEach(url => {
+    const div = document.createElement('div');
+    div.className = 'wp-thumb';
+    div.style.backgroundImage = `url('${url}')`;
+    div.addEventListener('click', () => {
+      document.getElementById('desktop').style.backgroundImage = `url('${url}')`;
+    });
+    wrap.appendChild(div);
+  });
+  
+  body.appendChild(wrap);
 }
 
-document.addEventListener("mousemove", (e) => {
-  if (dragWin) {
-    let el = document.getElementById(`win-${dragWin}`);
-    el.style.left = (winStartL + (e.clientX - winStartX)) + "px";
-    el.style.top = (winStartT + (e.clientY - winStartY)) + "px";
-  }
-  if (resizeWin) {
-    let el = document.getElementById(`win-${resizeWin}`);
-    el.style.width = Math.max(300, winStartW + (e.clientX - winStartX)) + "px";
-    el.style.height = Math.max(180, winStartH + (e.clientY - winStartY)) + "px";
-  }
+// --- BAŞLAT MENÜSÜ & TASKBAR YÖNETİMİ ---
+const startBtn = document.getElementById('start-btn');
+const startMenu = document.getElementById('start-menu');
+
+startBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  startMenu.classList.toggle('show');
 });
 
-document.addEventListener("mouseup", () => { dragWin = null; resizeWin = null; });
-
-function focusWindow(key) {
-  document.querySelectorAll(".window").forEach(w => w.classList.remove("focused"));
-  document.querySelectorAll(".tb-app-btn").forEach(b => b.classList.remove("active"));
-  
-  let win = document.getElementById(`win-${key}`);
-  if (win) win.classList.add("focused");
-  
-  let btn = document.getElementById(`tb-btn-${key}`);
-  if (btn) btn.classList.add("active");
-  
-  if (key === 'explorer') updateFileExplorerView();
+function closeStartMenu() {
+  startMenu.classList.remove('show');
 }
 
-function closeWindow(key) {
-  let win = document.getElementById(`win-${key}`);
-  if (win) {
-    win.classList.remove("open-anim");
-    setTimeout(() => { win.remove(); }, 200);
-  }
-  let btn = document.getElementById(`tb-btn-${key}`);
-  if (btn) btn.remove();
-  delete windows[key];
-}
+document.addEventListener('click', () => closeStartMenu());
+startMenu.addEventListener('click', (e) => e.stopPropagation());
 
-function minimizeWindow(key) {
-  let win = document.getElementById(`win-${key}`);
-  win.classList.add("minimized-anim");
-}
-
-function maximizeWindow(key) {
-  let win = document.getElementById(`win-${key}`);
-  if (windows[key].isMaximized) {
-    win.style.width = APPS[key].width + "px";
-    win.style.height = APPS[key].height + "px";
-    win.style.left = "100px"; win.style.top = "80px";
-    windows[key].isMaximized = false;
-  } else {
-    win.style.width = "100%";
-    win.style.height = "calc(100% - 48px)";
-    win.style.left = "0"; win.style.top = "0";
-    windows[key].isMaximized = true;
-  }
-}
-
-/* ── GÖREV ÇUBUĞU ENTEGRASYONU ── */
-function addToTaskbar(key) {
-  const container = document.getElementById("taskbar-apps");
-  if (document.getElementById(`tb-btn-${key}`)) return;
-  
-  let btn = document.createElement("button");
-  btn.id = `tb-btn-${key}`;
-  btn.className = "tb-app-btn running";
-  btn.innerHTML = APPS[key].emoji;
-  btn.addEventListener("click", () => {
-    let win = document.getElementById(`win-${key}`);
-    if (win.classList.contains("focused") || win.classList.contains("minimized-anim")) {
-      if (win.classList.contains("minimized-anim")) {
-        win.classList.remove("minimized-anim");
-        focusWindow(key);
-      } else {
-        win.classList.add("minimized-anim");
-      }
-    } else {
-      focusWindow(key);
-    }
-  });
-  container.appendChild(btn);
-}
-
-/* ── GELİŞMİŞ DOSYA GEZGİNİ YÖNETİMİ (FILE EXPLORER) ── */
-function changeFEDir(dirName) {
-  currentPath = ["root", dirName];
-  document.querySelectorAll(".fe-nav-item").forEach(i => {
-    if (i.innerText.includes(dirName)) i.classList.add("active");
-    else i.classList.remove("active");
-  });
-  updateFileExplorerView();
-}
-
-function updateFileExplorerView() {
-  const grid = document.getElementById("fe-grid-content");
-  if (!grid) return;
-  grid.innerHTML = "";
-  
-  let currentFolder = vfs.root[currentPath[1]].content;
-  if (currentPath[2]) {
-    currentFolder = currentFolder[currentPath[2]] ? currentFolder[currentPath[2]].content : {};
-  }
-
-  for (let key in currentFolder) {
-    let item = currentFolder[key];
-    let emoji = item.type === 'dir' ? '📁' : '📄';
-    grid.innerHTML += `
-      <div class="fe-item" dblclick="openFEItem('${key}', '${item.type}')">
-        <div class="fi-icon">${emoji}</div>
-        <div class="fi-name">${key}</div>
-      </div>
-    `;
-  }
-  
-  // Tek ve çift tıklamayı Gezgin elementleri için ata
-  setTimeout(() => {
-    document.querySelectorAll(".fe-item").forEach(el => {
-      let name = el.querySelector(".fi-name").innerText;
-      let type = el.getAttribute("dblclick").includes('dir') ? 'dir' : 'txt';
-      el.addEventListener("click", () => {
-        document.querySelectorAll(".fe-item").forEach(i => i.style.background = "transparent");
-        el.style.background = "var(--hover)";
-      });
-      el.addEventListener("dblclick", () => {
-        if (type === 'dir') {
-          currentPath.push(name);
-          updateFileExplorerView();
-        } else {
-          openWindow("notepad", name);
-        }
-      });
+function renderStartMenu() {
+  const grid = document.getElementById('start-apps-grid');
+  grid.innerHTML = '';
+  Object.keys(APPS).forEach(key => {
+    const item = document.createElement('div');
+    item.className = 'start-item';
+    item.innerHTML = `<div class="si-icon">${APPS[key].emoji}</div><div class="si-name">${APPS[key].name}</div>`;
+    item.addEventListener('click', () => {
+      openWindow(key);
+      closeStartMenu();
     });
-  }, 10);
-}
-
-function feNewItem(type) {
-  let target = vfs.root[currentPath[1]].content;
-  let name = type === "dir" ? "Yeni Klasör" : "Yeni Belge.txt";
-  target[name] = { type: type, content: type === 'dir' ? {} : 'Yazı alanı...' };
-  updateFileExplorerView();
-  renderDesktop();
-}
-
-/* ── GERÇEKÇİ TERMİNAL SİMÜLASYONU (Bütün Komutlar Çalışır) ── */
-function initTerminal(winId) {
-  const win = document.getElementById(winId);
-  const input = win.querySelector("#term-in");
-  const output = win.querySelector("#term-out");
-  
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      let cmdLine = input.value.trim();
-      output.innerHTML += `user@cloudos:~# ${cmdLine}\n`;
-      
-      if (cmdLine) {
-        let tokens = cmdLine.split(" ");
-        let baseCmd = tokens[0].toLowerCase();
-        
-        switch(baseCmd) {
-          case "help":
-            output.innerHTML += "Kullanılabilir Komutlar:\n  ls, cd, mkdir, touch, rm, cat, clear, date, whoami, node -v, node, npm install\n";
-            break;
-          case "clear":
-            output.innerHTML = "";
-            break;
-          case "date":
-            output.innerHTML += new Date().toString() + "\n";
-            break;
-          case "whoami":
-            output.innerHTML += "osman (Owner of DarkLords Studio)\n";
-            break;
-          case "node":
-            if (tokens[1] === "-v") {
-              output.innerHTML += "v20.11.0 (Sanal Konsol)\n";
-            } else {
-              output.innerHTML += "Welcome to Node.js Sim v20.11.0.\n> Türünün en iyisi!\n";
-            }
-            break;
-          case "npm":
-            if (tokens[1] === "install") {
-              output.innerHTML += "📦 Paketler indiriliyor... %100 Başarılı.\n";
-            } else {
-              output.innerHTML += "npm komutu başarıyla taklit edildi.\n";
-            }
-            break;
-          case "ls":
-            let folder = vfs.root["Masaüstü"].content;
-            let keys = Object.keys(folder).join("   ");
-            output.innerHTML += keys ? keys + "\n" : "(Klasör Boş)\n";
-            break;
-          default:
-            output.innerHTML += `bash: ${baseCmd}: komut bulunamadı (yardım için 'help' yaz)\n`;
-        }
-      }
-      input.value = "";
-      output.scrollTop = output.scrollHeight;
-    }
+    grid.appendChild(item);
   });
 }
+
+function renderTaskbarApps() {
+  const container = document.getElementById('taskbar-apps');
+  container.innerHTML = '';
+  
+  activeWindows.forEach(key => {
+    const icon = document.createElement('div');
+    icon.className = `tb-icon running ${focusedWindow?.id === 'win-'+key ? 'active' : ''}`;
+    icon.innerHTML = APPS[key].emoji;
+    icon.addEventListener('click', () => {
+      const win = document.getElementById(`win-${key}`);
+      if(win) {
+        if (win.classList.contains('minimized') || !win.classList.contains('focused')) {
+          win.classList.remove('minimized');
+          focusWindow(win);
+        } else {
+          minimizeWindow(win);
+        }
+      }
+    });
+    container.appendChild(icon);
+  });
+}
+
+// --- REALİSTİK SAĞ TIK MENÜSÜ (CONTEXT MENU) ---
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+  const menu = document.getElementById('context-menu');
+  menu.innerHTML = '';
+  
+  // Eğer masaüstünde boş bir yere tıklandıysa
+  if(e.target.id === 'desktop' || e.target.id === 'desktop-overlay') {
+    menu.innerHTML = `
+      <div class="cm-item refresh-btn">🔄 Yenile</div>
+      <div class="cm-sep"></div>
+      <div class="cm-item new-folder-btn">📁 Yeni Klasör</div>
+      <div class="cm-item new-file-btn">📝 Yeni Metin Belgesi</div>
+      <div class="cm-sep"></div>
+      <div class="cm-item wp-btn">🎨 Masaüstünü Özelleştir</div>
+    `;
+    
+    menu.querySelector('.refresh-btn').addEventListener('click', () => { renderDesktopIcons(); menu.style.display = 'none'; });
+    menu.querySelector('.wp-btn').addEventListener('click', () => { openWindow('wp'); menu.style.display = 'none'; });
+    menu.querySelector('.new-file-btn').addEventListener('click', () => {
+      let name = prompt("Dosya adı:", "Yeni Not.txt");
+      if(name) {
+        fs["Masaüstü"][name] = { type: "file", content: "İçerik..." };
+        renderDesktopIcons();
+      }
+      menu.style.display = 'none';
+    });
+  } else {
+    // İkon veya pencere üstü sağ tık menüsü
+    menu.innerHTML = `<div class="cm-item open-btn">⚡ Aç</div>`;
+  }
+  
+  menu.style.top = e.clientY + 'px';
+  menu.style.left = e.clientX + 'px';
+  menu.style.display = 'block';
+});
+
+document.addEventListener('click', () => {
+  document.getElementById('context-menu').style.display = 'none';
+});
+
+// --- SİSTEMİ BAŞLAT ---
+renderDesktopIcons();
+renderStartMenu();
 </script>
 </body>
 </html>
