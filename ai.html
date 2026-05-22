@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI.xosmanx07.ai</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui;
+  background: radial-gradient(circle at top, #111, #000);
+  color: white;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: #2b6cff;
+  filter: blur(120px);
+  opacity: 0.3;
+  top: -100px;
+  left: -100px;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform: translate(0,0); }
+  50% { transform: translate(80px, 40px); }
+}
+
+header {
+  text-align: center;
+  padding: 18px;
+  font-weight: bold;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+}
+
+#chat {
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.msg {
+  max-width: 70%;
+  padding: 12px 14px;
+  margin: 10px;
+  border-radius: 14px;
+  animation: pop 0.25s ease;
+  word-wrap: break-word;
+}
+
+.user {
+  background: #2b6cff;
+  margin-left: auto;
+}
+
+.ai {
+  background: #1c1c1c;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+@keyframes pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.inputBar {
+  display: flex;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #111;
+  color: white;
+  outline: none;
+}
+
+button {
+  margin-left: 10px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #2b6cff;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+footer {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.5;
+  padding: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="glow"></div>
+
+<header>
+xOsmanx07 Studios • DarkLords AI
+</header>
+
+<div id="chat"></div>
+
+<div class="inputBar">
+  <input id="input" placeholder="Bir şey yaz..." />
+  <button onclick="send()">Gönder</button>
+</div>
+
+<footer>ai.xosmanx07.qzz.io</footer>
+
+<script>
+const API = "https://YOUR-WORKER-URL"; // 🔥 BURAYI DEĞİŞTİR
+
+let memory = localStorage.getItem("mem") || "";
+
+function add(text, type) {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  document.getElementById("chat").appendChild(div);
+  document.getElementById("chat").scrollTop = 999999;
+}
+
+async function send() {
+  const input = document.getElementById("input");
+  const msg = input.value;
+  if (!msg) return;
+
+  add(msg, "user");
+  input.value = "";
+
+  add("yazıyor...", "ai");
+
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: msg, memory })
+  });
+
+  const data = await res.json();
+
+  document.querySelectorAll(".ai").forEach(e => {
+    if (e.innerText === "yazıyor...") e.remove();
+  });
+
+  add(data.reply, "ai");
+
+  memory += "\nUser: " + msg + "\nAI: " + data.reply;
+  memory = memory.split("\n").slice(-40).join("\n");
+
+  localStorage.setItem("mem", memory);
+}
+</script>
+
+</body>
+</html>
