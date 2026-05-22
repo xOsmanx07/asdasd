@@ -1,71 +1,78 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DarkLords AI</title>
 
 <style>
 body {
   margin: 0;
-  font-family: system-ui;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: radial-gradient(circle at top, #0f0f0f, #000);
+  font-family: system-ui;
   color: white;
-  overflow: hidden;
 }
 
-/* 🔥 glow animasyon */
+/* arka glow */
 .glow {
   position: absolute;
-  width: 500px;
-  height: 500px;
-  background: #4f7cff;
-  filter: blur(140px);
+  width: 600px;
+  height: 600px;
+  background: #3b82f6;
+  filter: blur(160px);
   opacity: 0.25;
-  top: -150px;
-  left: -150px;
-  animation: float 8s ease-in-out infinite;
+  top: -200px;
+  left: -200px;
 }
 
-@keyframes float {
-  0%,100% { transform: translate(0,0); }
-  50% { transform: translate(120px, 60px); }
+/* chat box */
+.container {
+  width: 420px;
+  height: 600px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,0.6);
 }
 
 header {
+  padding: 12px;
   text-align: center;
-  padding: 15px;
   font-weight: bold;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 #chat {
-  height: calc(100vh - 150px);
+  flex: 1;
   overflow-y: auto;
-  padding: 15px;
+  padding: 10px;
 }
 
-/* 💬 mesaj */
+/* msg */
 .msg {
-  max-width: 70%;
-  padding: 12px 14px;
-  margin: 10px;
-  border-radius: 16px;
-  animation: pop 0.25s ease;
+  max-width: 80%;
+  padding: 10px;
+  margin: 8px;
+  border-radius: 12px;
+  animation: pop 0.2s ease;
   word-wrap: break-word;
-  backdrop-filter: blur(10px);
 }
 
 .user {
-  background: linear-gradient(135deg, #2b6cff, #4f7cff);
+  background: #2563eb;
   margin-left: auto;
 }
 
 .ai {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.07);
 }
 
 @keyframes pop {
@@ -73,45 +80,35 @@ header {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* input bar */
+/* input */
 .inputBar {
   display: flex;
-  padding: 12px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 input {
   flex: 1;
-  padding: 12px;
+  padding: 10px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #111;
   color: white;
   outline: none;
 }
 
 button {
-  margin-left: 10px;
-  padding: 12px 18px;
+  margin-left: 8px;
+  padding: 10px 14px;
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2b6cff, #4f7cff);
+  border-radius: 10px;
+  background: #3b82f6;
   color: white;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 button:hover {
-  transform: scale(1.08);
-}
-
-footer {
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.4;
-  padding: 5px;
+  transform: scale(1.05);
 }
 </style>
 </head>
@@ -120,21 +117,25 @@ footer {
 
 <div class="glow"></div>
 
-<header>⚡ DarkLords AI</header>
+<div class="container">
+  <header>⚡ DarkLords AI</header>
 
-<div id="chat"></div>
+  <div id="chat"></div>
 
-<div class="inputBar">
-  <input id="input" placeholder="Bir şey yaz..." />
-  <button onclick="send()">Gönder</button>
+  <div class="inputBar">
+    <input id="input" placeholder="Bir şey yaz..." />
+    <button onclick="send()">Gönder</button>
+  </div>
 </div>
 
-<footer>powered by Gemini + Worker</footer>
-
 <script>
-const API = window.location.origin; // 🔥 kesin doğru
+const API = window.location.origin;
 
 let memory = localStorage.getItem("mem") || "";
+
+function log(...args){
+  console.log("🧠 AI DEBUG:", ...args);
+}
 
 function add(text, type) {
   const div = document.createElement("div");
@@ -149,6 +150,8 @@ async function send() {
   const msg = input.value.trim();
   if (!msg) return;
 
+  log("USER MSG:", msg);
+
   add(msg, "user");
   input.value = "";
 
@@ -158,29 +161,26 @@ async function send() {
   document.getElementById("chat").appendChild(loading);
 
   try {
+
     const res = await fetch(API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msg, memory })
+      body: JSON.stringify({ message: msg })
     });
 
-    let data;
-    try {
-      data = await res.json();
-    } catch {
-      loading.remove();
-      add("JSON error 💥", "ai");
-      return;
-    }
+    log("STATUS:", res.status);
+
+    let data = await res.json();
+    log("RESPONSE:", data);
 
     loading.remove();
 
-    if (!data.reply) {
-      add("Boş cevap geldi", "ai");
+    if (data.error) {
+      add("ERROR: " + JSON.stringify(data.error), "ai");
       return;
     }
 
-    add(data.reply, "ai");
+    add(data.reply || "boş cevap", "ai");
 
     memory += `\nUser: ${msg}\nAI: ${data.reply}`;
     memory = memory.split("\n").slice(-40).join("\n");
@@ -189,7 +189,8 @@ async function send() {
 
   } catch (err) {
     loading.remove();
-    add("Bağlantı hatası ⚠️", "ai");
+    log("FETCH ERROR:", err);
+    add("Bağlantı hatası 💥", "ai");
   }
 }
 </script>
