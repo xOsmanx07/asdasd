@@ -4,196 +4,473 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DarkLords AI</title>
-
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
 <style>
-body {
-  margin: 0;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: radial-gradient(circle at top, #0f0f0f, #000);
-  font-family: system-ui;
-  color: white;
-}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* arka glow */
-.glow {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: #3b82f6;
-  filter: blur(160px);
-  opacity: 0.25;
-  top: -200px;
-  left: -200px;
-}
+  :root {
+    --bg: #050508;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.07);
+    --accent: #5b6cf9;
+    --accent2: #a78bfa;
+    --text: #e8e8f0;
+    --muted: rgba(232,232,240,0.4);
+    --user-bg: linear-gradient(135deg, #4f5fef, #7c3aed);
+    --ai-bg: rgba(255,255,255,0.05);
+    --glow: rgba(91,108,249,0.15);
+  }
 
-/* chat box */
-.container {
-  width: 420px;
-  height: 600px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0,0,0,0.6);
-}
+  html, body { height: 100%; }
 
-header {
-  padding: 12px;
-  text-align: center;
-  font-weight: bold;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
 
-#chat {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
+  /* ── Animated background ── */
+  .bg-canvas {
+    position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.18;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 700px; height: 700px; background: #4f46e5; top: -250px; left: -200px; animation-delay: 0s; }
+  .orb2 { width: 500px; height: 500px; background: #7c3aed; bottom: -150px; right: -100px; animation-delay: -4s; }
+  .orb3 { width: 400px; height: 400px; background: #2563eb; top: 30%; left: 40%; animation-delay: -8s; }
 
-/* msg */
-.msg {
-  max-width: 80%;
-  padding: 10px;
-  margin: 8px;
-  border-radius: 12px;
-  animation: pop 0.2s ease;
-  word-wrap: break-word;
-}
+  @keyframes drift {
+    0%   { transform: translate(0,0) scale(1); }
+    100% { transform: translate(40px, 30px) scale(1.08); }
+  }
 
-.user {
-  background: #2563eb;
-  margin-left: auto;
-}
+  /* Grid lines */
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
 
-.ai {
-  background: rgba(255,255,255,0.07);
-}
+  /* ── Main shell ── */
+  .shell {
+    position: relative; z-index: 10;
+    width: 500px;
+    height: 700px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(10,10,18,0.75);
+    backdrop-filter: blur(30px) saturate(1.4);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(91,108,249,0.08),
+      0 30px 80px rgba(0,0,0,0.7),
+      0 0 100px var(--glow) inset;
+    animation: shellIn 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes shellIn {
+    from { opacity:0; transform: translateY(24px) scale(0.97); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
 
-@keyframes pop {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
+  /* ── Header ── */
+  header {
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    flex-shrink: 0;
+  }
+  .logo-ring {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f5fef, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 0 20px rgba(91,108,249,0.4);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 20px rgba(91,108,249,0.4); }
+    50%      { box-shadow: 0 0 35px rgba(91,108,249,0.7); }
+  }
+  .title-wrap { flex: 1; }
+  .title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    background: linear-gradient(90deg, #e8e8f0, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
-/* input */
-.inputBar {
-  display: flex;
-  padding: 10px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
+  /* ── Chat area ── */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-input {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  background: #111;
-  color: white;
-  outline: none;
-}
+  /* Welcome */
+  .welcome {
+    text-align: center;
+    padding: 30px 20px;
+    animation: fadeUp 0.5s ease both;
+  }
+  .welcome-icon { font-size: 40px; margin-bottom: 12px; }
+  .welcome h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); }
+  .welcome p { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 
-button {
-  margin-left: 8px;
-  padding: 10px 14px;
-  border: none;
-  border-radius: 10px;
-  background: #3b82f6;
-  color: white;
-  cursor: pointer;
-}
+  /* Suggestions */
+  .suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .sug {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+  .sug:hover { border-color: var(--accent); color: var(--text); background: rgba(91,108,249,0.08); }
 
-button:hover {
-  transform: scale(1.05);
-}
+  /* Message bubbles */
+  .msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    animation: fadeUp 0.25s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+  .avatar.ai-av { background: linear-gradient(135deg, #4f5fef33, #7c3aed33); border: 1px solid rgba(91,108,249,0.3); }
+  .avatar.user-av { background: linear-gradient(135deg, #4f5fef, #7c3aed); }
+
+  .bubble {
+    max-width: 78%;
+    padding: 11px 15px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.65;
+    word-break: break-word;
+    position: relative;
+  }
+  .bubble.user {
+    background: var(--user-bg);
+    border-bottom-right-radius: 4px;
+    color: #fff;
+  }
+  .bubble.ai {
+    background: var(--ai-bg);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+
+  /* Typing indicator */
+  .typing-dots {
+    display: flex; gap: 4px; align-items: center; padding: 4px 2px;
+  }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: translateY(0); opacity:0.5; }
+    40%          { transform: translateY(-5px); opacity:1; }
+  }
+
+  /* ── Input bar ── */
+  .input-area {
+    padding: 14px 16px 18px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+    flex-shrink: 0;
+  }
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px 6px 6px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-wrap:focus-within {
+    border-color: rgba(91,108,249,0.5);
+    box-shadow: 0 0 0 3px rgba(91,108,249,0.08);
+  }
+  #input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 6px 0;
+  }
+  #input::placeholder { color: var(--muted); }
+  #send-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #4f5fef, #7c3aed);
+    color: white;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+  #send-btn:hover { transform: scale(1.08); box-shadow: 0 4px 20px rgba(91,108,249,0.5); }
+  #send-btn:active { transform: scale(0.95); }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .char-info { font-size: 11px; color: var(--muted); text-align: right; margin-top: 6px; padding-right: 4px; }
+
+  /* Error bubble */
+  .bubble.error { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+
+  @media (max-width: 540px) {
+    .shell { width: 100vw; height: 100dvh; border-radius: 0; }
+  }
 </style>
 </head>
-
 <body>
 
-<div class="glow"></div>
+<div class="bg-canvas">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div class="grid-overlay"></div>
 
-<div class="container">
-  <header>⚡ DarkLords AI</header>
+<div class="shell">
+  <header>
+    <div class="logo-ring">⚡</div>
+    <div class="title-wrap">
+      <div class="title">DarkLords AI</div>
+      <div class="subtitle">Powered by Gemini 2.5 Flash</div>
+    </div>
+    <div class="status-dot" title="Çevrimiçi"></div>
+  </header>
 
-  <div id="chat"></div>
+  <div id="chat">
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">✦</div>
+      <h2>Merhaba! Ben DarkLords AI</h2>
+      <p>Sana her konuda yardımcı olmaya hazırım.<br>Ne öğrenmek istiyorsun?</p>
+      <div class="suggestions">
+        <span class="sug" onclick="suggest(this)">Kod yaz bana</span>
+        <span class="sug" onclick="suggest(this)">Fikir üret</span>
+        <span class="sug" onclick="suggest(this)">Bir şey açıkla</span>
+        <span class="sug" onclick="suggest(this)">Yardımcı ol</span>
+      </div>
+    </div>
+  </div>
 
-  <div class="inputBar">
-    <input id="input" placeholder="Bir şey yaz..." />
-    <button onclick="send()">Gönder</button>
+  <div class="input-area">
+    <div class="input-wrap">
+      <input id="input" placeholder="Bir şey yaz..." autocomplete="off" maxlength="2000"/>
+      <button id="send-btn" onclick="send()" title="Gönder">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+    <div class="char-info" id="char-info"></div>
   </div>
 </div>
 
 <script>
-const API = window.location.origin;
+const chatEl = document.getElementById("chat");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("send-btn");
+const charInfo = document.getElementById("char-info");
 
-let memory = localStorage.getItem("mem") || "";
+let history = [];
+let loading = false;
 
-function log(...args){
-  console.log("🧠 AI DEBUG:", ...args);
+// ── Char counter ──
+inputEl.addEventListener("input", () => {
+  const n = inputEl.value.length;
+  charInfo.textContent = n > 100 ? `${n}/2000` : "";
+});
+
+// ── Enter to send ──
+inputEl.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+
+// ── Suggestion chips ──
+function suggest(el) {
+  inputEl.value = el.textContent;
+  inputEl.focus();
 }
 
-function add(text, type) {
-  const div = document.createElement("div");
-  div.className = "msg " + type;
-  div.innerText = text;
-  document.getElementById("chat").appendChild(div);
-  document.getElementById("chat").scrollTop = 999999;
+// ── Add message row ──
+function addMsg(text, type) {
+  const welcome = document.getElementById("welcome");
+  if (welcome) welcome.remove();
+
+  const row = document.createElement("div");
+  row.className = "msg-row " + type;
+
+  const av = document.createElement("div");
+  av.className = "avatar " + (type === "user" ? "user-av" : "ai-av");
+  av.textContent = type === "user" ? "👤" : "⚡";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble " + type;
+  bubble.textContent = text;
+
+  row.appendChild(av);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  scrollBottom();
+  return bubble;
 }
 
+// ── Typing indicator ──
+function showTyping() {
+  const row = document.createElement("div");
+  row.className = "msg-row ai";
+  row.id = "typing-row";
+
+  const av = document.createElement("div");
+  av.className = "avatar ai-av";
+  av.textContent = "⚡";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble ai";
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+
+  row.appendChild(av);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  scrollBottom();
+}
+function removeTyping() {
+  const r = document.getElementById("typing-row");
+  if (r) r.remove();
+}
+
+function scrollBottom() {
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+// ── Main send ──
 async function send() {
-  const input = document.getElementById("input");
-  const msg = input.value.trim();
+  if (loading) return;
+  const msg = inputEl.value.trim();
   if (!msg) return;
 
-  log("USER MSG:", msg);
+  inputEl.value = "";
+  charInfo.textContent = "";
+  addMsg(msg, "user");
+  history.push({ role: "user", content: msg });
 
-  add(msg, "user");
-  input.value = "";
-
-  const loading = document.createElement("div");
-  loading.className = "msg ai";
-  loading.innerText = "yazıyor...";
-  document.getElementById("chat").appendChild(loading);
+  loading = true;
+  sendBtn.disabled = true;
+  showTyping();
 
   try {
+    const GEMINI_KEY = "YOUR_GEMINI_API_KEY_HERE";
+    const geminiHistory = history.slice(0, -1).map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }]
+    }));
 
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msg })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: "Sen DarkLords AI'sın. Kısa, net ve yardımcı cevaplar ver. Türkçe konuş." }] },
+          contents: [
+            ...geminiHistory,
+            { role: "user", parts: [{ text: msg }] }
+          ],
+          generationConfig: { maxOutputTokens: 1024 }
+        })
+      }
+    );
 
-    log("STATUS:", res.status);
+    const data = await res.json();
+    removeTyping();
 
-    let data = await res.json();
-    log("RESPONSE:", data);
-
-    loading.remove();
-
-    if (data.error) {
-      add("ERROR: " + JSON.stringify(data.error), "ai");
-      return;
+    if (!res.ok || data.error) {
+      const errMsg = data?.error?.message || "API hatası oluştu.";
+      const b = addMsg("⚠️ " + errMsg, "ai");
+      b.classList.add("error");
+    } else {
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Boş cevap";
+      addMsg(reply, "ai");
+      history.push({ role: "assistant", content: reply });
+      if (history.length > 40) history = history.slice(-40);
     }
 
-    add(data.reply || "boş cevap", "ai");
-
-    memory += `\nUser: ${msg}\nAI: ${data.reply}`;
-    memory = memory.split("\n").slice(-40).join("\n");
-
-    localStorage.setItem("mem", memory);
-
   } catch (err) {
-    loading.remove();
-    log("FETCH ERROR:", err);
-    add("Bağlantı hatası 💥", "ai");
+    removeTyping();
+    const b = addMsg("💥 Bağlantı hatası: " + err.message, "ai");
+    b.classList.add("error");
   }
+
+  loading = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
 }
 </script>
-
 </body>
 </html>
