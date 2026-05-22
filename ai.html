@@ -3,67 +3,69 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ai.xosmanx07.qzz.io</title>
+<title>DarkLords AI</title>
 
 <style>
-* { box-sizing: border-box; }
-
 body {
   margin: 0;
   font-family: system-ui;
-  background: radial-gradient(circle at top, #111, #000);
+  background: radial-gradient(circle at top, #0f0f0f, #000);
   color: white;
   overflow: hidden;
 }
 
+/* 🔥 glow animasyon */
 .glow {
   position: absolute;
-  width: 400px;
-  height: 400px;
-  background: #2b6cff;
-  filter: blur(120px);
-  opacity: 0.3;
-  top: -100px;
-  left: -100px;
-  animation: float 6s ease-in-out infinite;
+  width: 500px;
+  height: 500px;
+  background: #4f7cff;
+  filter: blur(140px);
+  opacity: 0.25;
+  top: -150px;
+  left: -150px;
+  animation: float 8s ease-in-out infinite;
 }
 
 @keyframes float {
   0%,100% { transform: translate(0,0); }
-  50% { transform: translate(80px, 40px); }
+  50% { transform: translate(120px, 60px); }
 }
 
 header {
   text-align: center;
-  padding: 18px;
+  padding: 15px;
   font-weight: bold;
   background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 #chat {
-  height: calc(100vh - 140px);
+  height: calc(100vh - 150px);
   overflow-y: auto;
   padding: 15px;
 }
 
+/* 💬 mesaj */
 .msg {
   max-width: 70%;
   padding: 12px 14px;
   margin: 10px;
-  border-radius: 14px;
+  border-radius: 16px;
   animation: pop 0.25s ease;
   word-wrap: break-word;
+  backdrop-filter: blur(10px);
 }
 
 .user {
-  background: #2b6cff;
+  background: linear-gradient(135deg, #2b6cff, #4f7cff);
   margin-left: auto;
 }
 
 .ai {
-  background: #1c1c1c;
-  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
 @keyframes pop {
@@ -71,18 +73,20 @@ header {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* input bar */
 .inputBar {
   display: flex;
-  padding: 10px;
+  padding: 12px;
   background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 input {
   flex: 1;
   padding: 12px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #111;
   color: white;
   outline: none;
@@ -92,21 +96,21 @@ button {
   margin-left: 10px;
   padding: 12px 18px;
   border: none;
-  border-radius: 10px;
-  background: #2b6cff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2b6cff, #4f7cff);
   color: white;
   cursor: pointer;
   transition: 0.2s;
 }
 
 button:hover {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 footer {
   text-align: center;
   font-size: 12px;
-  opacity: 0.5;
+  opacity: 0.4;
   padding: 5px;
 }
 </style>
@@ -116,9 +120,7 @@ footer {
 
 <div class="glow"></div>
 
-<header>
-xOsmanx07 Studios • DarkLords AI
-</header>
+<header>⚡ DarkLords AI</header>
 
 <div id="chat"></div>
 
@@ -127,10 +129,10 @@ xOsmanx07 Studios • DarkLords AI
   <button onclick="send()">Gönder</button>
 </div>
 
-<footer>ai.xosmanx07.qzz.io</footer>
+<footer>powered by Gemini + Worker</footer>
 
 <script>
-const API = "https://ai.xosmanx07.qzz.io/"; // 🔥 BURAYI DEĞİŞTİR
+const API = window.location.origin; // 🔥 kesin doğru
 
 let memory = localStorage.getItem("mem") || "";
 
@@ -144,32 +146,51 @@ function add(text, type) {
 
 async function send() {
   const input = document.getElementById("input");
-  const msg = input.value;
+  const msg = input.value.trim();
   if (!msg) return;
 
   add(msg, "user");
   input.value = "";
 
-  add("yazıyor...", "ai");
+  const loading = document.createElement("div");
+  loading.className = "msg ai";
+  loading.innerText = "yazıyor...";
+  document.getElementById("chat").appendChild(loading);
 
-  const res = await fetch(API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: msg, memory })
-  });
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg, memory })
+    });
 
-  const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      loading.remove();
+      add("JSON error 💥", "ai");
+      return;
+    }
 
-  document.querySelectorAll(".ai").forEach(e => {
-    if (e.innerText === "yazıyor...") e.remove();
-  });
+    loading.remove();
 
-  add(data.reply, "ai");
+    if (!data.reply) {
+      add("Boş cevap geldi", "ai");
+      return;
+    }
 
-  memory += "\nUser: " + msg + "\nAI: " + data.reply;
-  memory = memory.split("\n").slice(-40).join("\n");
+    add(data.reply, "ai");
 
-  localStorage.setItem("mem", memory);
+    memory += `\nUser: ${msg}\nAI: ${data.reply}`;
+    memory = memory.split("\n").slice(-40).join("\n");
+
+    localStorage.setItem("mem", memory);
+
+  } catch (err) {
+    loading.remove();
+    add("Bağlantı hatası ⚠️", "ai");
+  }
 }
 </script>
 
