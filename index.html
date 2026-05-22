@@ -1814,79 +1814,6 @@ function settingsPage(page,el){
   if(el)el.classList.add('active');
   const c=document.getElementById('settings-content');
   if(c)c.innerHTML=settingsPages[page]||`<h2>${page}</h2><p style="color:var(--text2);margin-top:16px">Bu sayfa yakında eklenecek.</p>`;
-}
-
-// ═══════════════════════════════════════
-// AI ASSISTANT
-// ═══════════════════════════════════════
-let aiMessages=[];
-let aiIsTyping=false;
-
-function buildAI(body){
-  body.style.cssText='display:flex;flex-direction:column;height:100%;';
-  aiMessages=[];
-  body.innerHTML=`
-    <div class="ai-wrap">
-      <div class="ai-header">
-        <div class="ai-avatar">🤖</div>
-        <div class="ai-header-info">
-          <h3>CloudOS AI Asistanı</h3>
-          <p id="ai-status">● Çevrimiçi · xOsmanx07 Studios ile güçlendirilmiş</p>
-        </div>
-        <button onclick="aiClearChat()" style="margin-left:auto;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:12px;transition:all .15s;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'">🗑️ Temizle</button>
-      </div>
-      <div class="ai-messages" id="ai-msgs">
-        <div class="ai-msg assistant">
-          <div class="ai-msg-avatar">🤖</div>
-          <div class="ai-bubble">Merhaba! Ben CloudOS AI Asistanıyım — xOsmanx07 Studios tarafından güçlendiriliyorum. Size nasıl yardımcı olabilirim? Kod yazabilir, sorularınızı cevaplayabilir, yaratıcı içerik üretebilirim! 😊</div>
-        </div>
-      </div>
-      <div class="ai-suggestions" id="ai-sugs">
-        <div class="ai-sug" onclick="aiQuick('Merhaba! Neler yapabilirsin?')">👋 Neler yapabilirsin?</div>
-        <div class="ai-sug" onclick="aiQuick('Bana basit bir JavaScript kodu yaz')">💻 Kod yaz</div>
-        <div class="ai-sug" onclick="aiQuick('CloudOS hakkında bilgi ver')">🖥️ CloudOS</div>
-        <div class="ai-sug" onclick="aiQuick('Türkiye hakkında ilginç bilgiler ver')">🇹🇷 Türkiye</div>
-        <div class="ai-sug" onclick="aiQuick('Bana kısa bir hikaye yaz')">📖 Hikaye yaz</div>
-      </div>
-      <div class="ai-input-bar">
-        <textarea class="ai-input" id="ai-input" placeholder="Bir mesaj yaz... (Enter: gönder, Shift+Enter: yeni satır)" rows="1" onkeydown="aiKeyDown(event)" oninput="aiAutoResize(this)"></textarea>
-        <button class="ai-send-btn" id="ai-send" onclick="aiSend()">➤</button>
-      </div>
-    </div>
-  `;
-}
-
-function aiAutoResize(ta){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';}
-function aiKeyDown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend();}}
-function aiQuick(text){const inp=document.getElementById('ai-input');if(inp){inp.value=text;aiSend();}}
-function aiClearChat(){
-  aiMessages=[];
-  const msgs=document.getElementById('ai-msgs');
-  if(msgs)msgs.innerHTML=`<div class="ai-msg assistant"><div class="ai-msg-avatar">🤖</div><div class="ai-bubble">Sohbet temizlendi. Nasıl yardımcı olabilirim?</div></div>`;
-}
-
-async function aiSend(){
-  if(aiIsTyping)return;
-  const inp=document.getElementById('ai-input');
-  const text=inp?.value.trim();
-  if(!text)return;
-  inp.value='';inp.style.height='auto';
-
-  const msgs=document.getElementById('ai-msgs');
-  if(!msgs)return;
-  msgs.innerHTML+=`<div class="ai-msg user"><div class="ai-msg-avatar">👤</div><div class="ai-bubble">${escapeHtml(text)}</div></div>`;
-  aiMessages.push({role:'user',content:text});
-
-  aiIsTyping=true;
-  const sendBtn=document.getElementById('ai-send');
-  if(sendBtn)sendBtn.disabled=true;
-  const statusEl=document.getElementById('ai-status');
-  if(statusEl)statusEl.textContent='● Yazıyor...';
-
-  const typingId='typing-'+Date.now();
-  msgs.innerHTML+=`<div class="ai-msg assistant" id="${typingId}"><div class="ai-msg-avatar">🤖</div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div></div>`;
-  msgs.scrollTop=msgs.scrollHeight;
-
 try{
 
   const contents=[
@@ -1917,39 +1844,35 @@ try{
     data.candidates?.[0]?.content?.parts?.[0]?.text ||
     'Üzgünüm, bir yanıt alınamadı.';
 
-  const data=await response.json();
+  aiMessages.push({
+    role:'assistant',
+    content:reply
+  });
 
-  const reply=data.content?.[0]?.text||'Üzgünüm, bir yanıt alınamadı.';
-    aiMessages.push({role:'assistant',content:reply});
-    document.getElementById(typingId)?.remove();
-    msgs.innerHTML+=`<div class="ai-msg assistant"><div class="ai-msg-avatar">🤖</div><div class="ai-bubble">${formatAIMessage(reply)}</div></div>`;
-  } catch(e){
-    document.getElementById(typingId)?.remove();
-    const offline=[
-      'Şu an API\'ye bağlanamıyorum. İnternet bağlantınızı kontrol edin veya CORS politikası bu ortamda API çağrısını engelliyor olabilir.',
-      'Alternatif olarak, bu uygulamayı kendi sunucunuzda çalıştırırsanız AI özelliği tam çalışır.',
-    ];
-    msgs.innerHTML+=`<div class="ai-msg assistant"><div class="ai-msg-avatar">🤖</div><div class="ai-bubble">${escapeHtml(offline[0])}</div></div>`;
-  }
+  document.getElementById(typingId)?.remove();
 
-  aiIsTyping=false;
-  if(sendBtn)sendBtn.disabled=false;
-  if(statusEl)statusEl.textContent='● Çevrimiçi · xOsmanx07 Studios ile güçlendirilmiş';
-  msgs.scrollTop=msgs.scrollHeight;
-}
+  msgs.innerHTML+=`
+    <div class="ai-msg assistant">
+      <div class="ai-msg-avatar">🤖</div>
+      <div class="ai-bubble">${formatAIMessage(reply)}</div>
+    </div>
+  `;
 
-function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+} catch(e){
 
-function formatAIMessage(text){
-  text=escapeHtml(text);
-  text=text.replace(/```(\w*)\n?([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
-  text=text.replace(/`([^`]+)`/g,'<code>$1</code>');
-  text=text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  text=text.replace(/\*([^*\n]+)\*/g,'<em>$1</em>');
-  text=text.replace(/^## (.+)$/gm,'<h3 style="margin:8px 0 4px;font-size:14px;font-weight:600">$1</h3>');
-  text=text.replace(/^# (.+)$/gm,'<h2 style="margin:8px 0 4px;font-size:16px;font-weight:600">$1</h2>');
-  text=text.replace(/^- (.+)$/gm,'<li style="margin-left:16px">$1</li>');
-  return text;
+  document.getElementById(typingId)?.remove();
+
+  const offline=[
+    'Şu an Gemini API\'ye bağlanamıyorum. İnternet bağlantınızı kontrol edin.',
+    'Cloudflare Worker ve Gemini API anahtarınızı kontrol edin.'
+  ];
+
+  msgs.innerHTML+=`
+    <div class="ai-msg assistant">
+      <div class="ai-msg-avatar">🤖</div>
+      <div class="ai-bubble">${escapeHtml(offline[0])}</div>
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════════
