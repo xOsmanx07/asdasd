@@ -186,7 +186,10 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
   </div>
 
   <div id="history-section" style="display:none;margin-top:48px">
-    <div class="sec-label">Geçmiş Üretimler</div>
+    <div class="sec-label" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:10px">Geçmiş Üretimler<span style="flex:1;height:1px;background:var(--border);display:block;min-width:40px"></span></span>
+      <button class="act-btn" onclick="clearHistory()" style="flex-shrink:0;margin-left:12px">🗑 Geçmişi Temizle</button>
+    </div>
     <div id="hist-list"></div>
   </div>
 
@@ -345,7 +348,8 @@ function makeCard(url, prompt, delay, isHistory = false) {
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
 
-  const filename = 'xOsmanx07-' + Date.now() + '.png';
+  const safePrompt = prompt.replace(/[^\w\s\u00C0-\u024F\u0400-\u04FF]/g,'').trim().replace(/\s+/g,'-').slice(0,60);
+  const filename = (safePrompt || 'gorsel') + '.png';
 
   const dlBtn = document.createElement('button');
   dlBtn.className = 'ol-btn';
@@ -479,6 +483,13 @@ function renderHistory() {
     group.appendChild(grid);
     list.appendChild(group);
   });
+}
+
+function clearHistory() {
+  if (!confirm('Tüm geçmiş silinsin mi?')) return;
+  try { localStorage.removeItem(STORAGE_KEY + '_' + userKey); } catch {}
+  document.getElementById('history-section').style.display = 'none';
+  document.getElementById('hist-list').innerHTML = '';
 }
 
 function clearOut() {
