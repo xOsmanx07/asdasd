@@ -201,9 +201,11 @@ const LOAD_MSGS = [
   "Son rötuşlar yapılıyor...",
   "Neredeyse hazır..."
 ];
-const STORAGE_KEY = 'xo7_v4_history';
+
+// 2 ayrı key: meta (prompt+ts+id) ve full görseller (id bazlı)
+const META_KEY   = 'xo7_v5_meta';
+const IMG_PREFIX = 'xo7_v5_img_';
 const MAX_HISTORY = 15;
-let progTimer, msgTimer, progVal = 0;
 let userKey = '';
 
 function getUserKey() {
@@ -211,25 +213,49 @@ function getUserKey() {
   if (!k) { k = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2); localStorage.setItem('xo7_uid', k); }
   return k;
 }
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY + '_' + userKey) || '[]'); } catch { return []; }
+
+// Meta listesini oku (prompt, ts, id — görsel YOK)
+function loadMeta() {
+  try { return JSON.parse(localStorage.getItem(META_KEY + '_' + userKey) || '[]'); } catch { return []; }
 }
-function saveHistory(h) {
-  // Önce tam kaliteli kaydetmeyi dene
-  try {
-    localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY)));
-    return;
-  } catch {}
-  // localStorage doluysa thumbnail'e düş (sadece storage için, modal hâlâ full kalite)
-  try {
-    const t = h.slice(0, MAX_HISTORY).map(e => ({...e, full: undefined}));
-    localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(t));
-  } catch {}
+
+// Meta listesini kaydet
+function saveMeta(list) {
+  try { localStorage.setItem(META_KEY + '_' + userKey, JSON.stringify(list.slice(0, MAX_HISTORY))); } catch {}
 }
+
+// Tam görseli ayrı key'de kaydet
+function saveImg(id, dataUrl) {
+  try {
+    localStorage.setItem(IMG_PREFIX + userKey + '_' + id, dataUrl);
+    return true;
+  } catch (e) {
+    // Yer yoksa en eski görseli sil, tekrar dene
+    pruneOldImages(1);
+    try { localStorage.setItem(IMG_PREFIX + userKey + '_' + id, dataUrl); return true; } catch { return false; }
+  }
+}
+
+// Görseli oku
+function loadImg(id) {
+  try { return localStorage.getItem(IMG_PREFIX + userKey + '_' + id) || null; } catch { return null; }
+}
+
+// Eski görsel key'lerini temizle (en eski n tanesini sil)
+function pruneOldImages(n) {
+  const meta = loadMeta();
+  const toDelete = meta.slice(-n);
+  toDelete.forEach(e => {
+    try { localStorage.removeItem(IMG_PREFIX + userKey + '_' + e.id); } catch {}
+  });
+}
+
 function safeFilename(p) { return p.replace(/[^\w\s\u00C0-\u024F]/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'gorsel'; }
 function setChip(el) { document.getElementById('prompt').value = el.textContent.trim(); }
 function showErr(msg) { document.getElementById('err-box').style.display='block'; document.getElementById('err-msg').textContent=msg; }
 function hideErr() { document.getElementById('err-box').style.display='none'; }
+
+let progTimer, msgTimer, progVal = 0;
 
 function setLoading(on) {
   document.getElementById('loading').style.display = on ? 'block' : 'none';
@@ -261,28 +287,21 @@ async function generateImage(userPrompt, width, height) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt: userPrompt, width, height })
   });
-
   const data = await resp.json();
-
-  if (!resp.ok || data.error) {
-    throw new Error(data.error || 'API hatası: ' + resp.status);
-  }
-
+  if (!resp.ok || data.error) throw new Error(data.error || 'API hatası: ' + resp.status);
   if (!data.image) throw new Error('Görsel verisi boş geldi.');
-
   const dataUrl = `data:${data.mimeType || 'image/png'};base64,${data.image}`;
   return { base64: dataUrl };
 }
 
-// card'a hem thumb (görüntüleme) hem full (modal) verilir
-function makeCard(thumb, prompt, full) {
-  const fullSrc = full || thumb; // full yoksa thumb'u kullan (geriye dönük uyum)
+// Kart oluştur — thumb ekranda gösterilir, fullSrc modal için
+function makeCard(thumb, prompt, fullSrc) {
   const card = document.createElement('div'); card.className='img-card';
-  const img = document.createElement('img'); img.alt=prompt;
-  const ov = document.createElement('div'); ov.className='overlay';
-  const dl = document.createElement('button'); dl.className='ol-btn'; dl.textContent='↓ İndir';
+  const img  = document.createElement('img'); img.alt=prompt;
+  const ov   = document.createElement('div'); ov.className='overlay';
+  const dl   = document.createElement('button'); dl.className='ol-btn'; dl.textContent='↓ İndir';
   dl.onclick = e=>{ e.stopPropagation(); downloadImage(fullSrc, prompt); };
-  const big = document.createElement('button'); big.className='ol-btn'; big.textContent='⤢ Büyüt';
+  const big  = document.createElement('button'); big.className='ol-btn'; big.textContent='⤢ Büyüt';
   big.onclick = e=>{ e.stopPropagation(); openModal(fullSrc); };
   ov.appendChild(dl); ov.appendChild(big);
   card.appendChild(img); card.appendChild(ov);
@@ -305,22 +324,28 @@ async function generate() {
   hideErr();
   document.getElementById('output').style.display='none';
   setLoading(true);
-  const w = 1024;
-  const h = 1024;
   try {
-    const result = await generateImage(userPrompt, w, h);
+    const result = await generateImage(userPrompt, 1024, 1024);
     setLoading(false);
+
+    // Çıktıda tam kalite göster
     const grid = document.getElementById('img-grid');
     grid.innerHTML = '';
     document.getElementById('output').style.display = 'block';
-    // Çıktıda tam kalite göster
     grid.appendChild(makeCard(result.base64, userPrompt, result.base64));
 
-    // Geçmişe: thumb (görsel kart için) + full (modal için) kaydet
-    const thumb = await shrink(result.base64, 400);
-    const hist = loadHistory();
-    hist.unshift({ prompt: userPrompt, thumb, full: result.base64, ts: Date.now() });
-    saveHistory(hist);
+    // Geçmişe kaydet
+    const id = 'img_' + Date.now();
+    saveImg(id, result.base64); // tam görsel ayrı key'de
+
+    const meta = loadMeta();
+    // MAX_HISTORY'yi aşan eski görselleri sil
+    if (meta.length >= MAX_HISTORY) {
+      const old = meta[meta.length - 1];
+      try { localStorage.removeItem(IMG_PREFIX + userKey + '_' + old.id); } catch {}
+    }
+    meta.unshift({ id, prompt: userPrompt, ts: Date.now() });
+    saveMeta(meta);
     renderHistory();
   } catch(err) {
     setLoading(false);
@@ -328,48 +353,42 @@ async function generate() {
   }
 }
 
-function shrink(dataUrl, maxPx) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const ratio = Math.min(maxPx/img.width, maxPx/img.height, 1);
-        const c = document.createElement('canvas');
-        c.width = Math.round(img.width*ratio); c.height = Math.round(img.height*ratio);
-        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        resolve(c.toDataURL('image/jpeg',0.85));
-      } catch { resolve(dataUrl); }
-    };
-    img.onerror = ()=>resolve(dataUrl); img.src = dataUrl;
-  });
-}
-
 function renderHistory() {
-  const hist = loadHistory();
-  const sec = document.getElementById('history-section');
+  const meta = loadMeta();
+  const sec  = document.getElementById('history-section');
   const list = document.getElementById('hist-list');
-  if (!hist.length) { sec.style.display='none'; return; }
+  if (!meta.length) { sec.style.display='none'; return; }
   sec.style.display='block'; list.innerHTML='';
-  hist.forEach(e => {
-    if (!e.thumb) return;
-    const g=document.createElement('div'); g.style.marginBottom='24px';
-    const l=document.createElement('div'); l.className='hist-prompt'; l.textContent='✦ '+e.prompt;
-    const gr=document.createElement('div'); gr.className='img-grid';
-    // thumb kartı göster, tıklayınca full aç (full yoksa thumb)
-    gr.appendChild(makeCard(e.thumb, e.prompt, e.full || e.thumb));
+  meta.forEach(e => {
+    const full = loadImg(e.id);
+    if (!full) return; // görsel silinmişse atla
+    const g  = document.createElement('div'); g.style.marginBottom='24px';
+    const l  = document.createElement('div'); l.className='hist-prompt'; l.textContent='✦ '+e.prompt;
+    const gr = document.createElement('div'); gr.className='img-grid';
+    // hem kart hem modal TAM KALİTE (aynı src)
+    gr.appendChild(makeCard(full, e.prompt, full));
     g.appendChild(l); g.appendChild(gr); list.appendChild(g);
   });
 }
+
 function clearHistory() {
   if (!confirm('Tüm geçmiş silinsin mi?')) return;
-  try { localStorage.removeItem(STORAGE_KEY+'_'+userKey); } catch {}
+  const meta = loadMeta();
+  meta.forEach(e => { try { localStorage.removeItem(IMG_PREFIX + userKey + '_' + e.id); } catch {} });
+  try { localStorage.removeItem(META_KEY + '_' + userKey); } catch {}
   document.getElementById('history-section').style.display='none';
   document.getElementById('hist-list').innerHTML='';
 }
-function openModal(src) { document.getElementById('modal-img').src=src; document.getElementById('modal').classList.add('open'); }
+
+function openModal(src) {
+  document.getElementById('modal-img').src = src;
+  document.getElementById('modal').classList.add('open');
+}
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); if((e.ctrlKey||e.metaKey)&&e.key==='Enter') generate(); });
-userKey=getUserKey(); renderHistory();
+
+userKey = getUserKey();
+renderHistory();
 </script>
 </body>
 </html>
