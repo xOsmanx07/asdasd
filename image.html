@@ -191,7 +191,6 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
-// Worker proxy adresin — bunu kendi worker URL'inle değiştir
 const API_PROXY = 'https://ai-image.xosmanx07.qzz.io/api';
 
 const LOAD_MSGS = [
@@ -216,12 +215,16 @@ function loadHistory() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY + '_' + userKey) || '[]'); } catch { return []; }
 }
 function saveHistory(h) {
-  try { localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY))); } catch {
-    try {
-      const t = h.slice(0, 5).map(e => ({...e, thumb: e.thumb?.slice(0, 5000)}));
-      localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(t));
-    } catch {}
-  }
+  // Önce tam kaliteli kaydetmeyi dene
+  try {
+    localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY)));
+    return;
+  } catch {}
+  // localStorage doluysa thumbnail'e düş (sadece storage için, modal hâlâ full kalite)
+  try {
+    const t = h.slice(0, MAX_HISTORY).map(e => ({...e, full: undefined}));
+    localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(t));
+  } catch {}
 }
 function safeFilename(p) { return p.replace(/[^\w\s\u00C0-\u024F]/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'gorsel'; }
 function setChip(el) { document.getElementById('prompt').value = el.textContent.trim(); }
@@ -271,20 +274,22 @@ async function generateImage(userPrompt, width, height) {
   return { base64: dataUrl };
 }
 
-function makeCard(base64, prompt) {
+// card'a hem thumb (görüntüleme) hem full (modal) verilir
+function makeCard(thumb, prompt, full) {
+  const fullSrc = full || thumb; // full yoksa thumb'u kullan (geriye dönük uyum)
   const card = document.createElement('div'); card.className='img-card';
   const img = document.createElement('img'); img.alt=prompt;
   const ov = document.createElement('div'); ov.className='overlay';
   const dl = document.createElement('button'); dl.className='ol-btn'; dl.textContent='↓ İndir';
-  dl.onclick = e=>{ e.stopPropagation(); downloadImage(base64, prompt); };
+  dl.onclick = e=>{ e.stopPropagation(); downloadImage(fullSrc, prompt); };
   const big = document.createElement('button'); big.className='ol-btn'; big.textContent='⤢ Büyüt';
-  big.onclick = e=>{ e.stopPropagation(); openModal(base64); };
+  big.onclick = e=>{ e.stopPropagation(); openModal(fullSrc); };
   ov.appendChild(dl); ov.appendChild(big);
   card.appendChild(img); card.appendChild(ov);
-  card.onclick = ()=>openModal(base64);
+  card.onclick = ()=>openModal(fullSrc);
   card.classList.add('skeleton');
   img.onload = ()=>card.classList.remove('skeleton');
-  img.src = base64;
+  img.src = thumb;
   return card;
 }
 
@@ -308,11 +313,15 @@ async function generate() {
     const grid = document.getElementById('img-grid');
     grid.innerHTML = '';
     document.getElementById('output').style.display = 'block';
-    grid.appendChild(makeCard(result.base64, userPrompt));
-    const thumb = await shrink(result.base64, 300);
+    // Çıktıda tam kalite göster
+    grid.appendChild(makeCard(result.base64, userPrompt, result.base64));
+
+    // Geçmişe: thumb (görsel kart için) + full (modal için) kaydet
+    const thumb = await shrink(result.base64, 400);
     const hist = loadHistory();
-    hist.unshift({ prompt: userPrompt, thumb, ts: Date.now() });
-    saveHistory(hist); renderHistory();
+    hist.unshift({ prompt: userPrompt, thumb, full: result.base64, ts: Date.now() });
+    saveHistory(hist);
+    renderHistory();
   } catch(err) {
     setLoading(false);
     showErr('Görsel oluşturulamadı: ' + (err.message || 'Bilinmeyen hata'));
@@ -328,7 +337,7 @@ function shrink(dataUrl, maxPx) {
         const c = document.createElement('canvas');
         c.width = Math.round(img.width*ratio); c.height = Math.round(img.height*ratio);
         c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        resolve(c.toDataURL('image/jpeg',0.7));
+        resolve(c.toDataURL('image/jpeg',0.85));
       } catch { resolve(dataUrl); }
     };
     img.onerror = ()=>resolve(dataUrl); img.src = dataUrl;
@@ -346,7 +355,8 @@ function renderHistory() {
     const g=document.createElement('div'); g.style.marginBottom='24px';
     const l=document.createElement('div'); l.className='hist-prompt'; l.textContent='✦ '+e.prompt;
     const gr=document.createElement('div'); gr.className='img-grid';
-    gr.appendChild(makeCard(e.thumb, e.prompt));
+    // thumb kartı göster, tıklayınca full aç (full yoksa thumb)
+    gr.appendChild(makeCard(e.thumb, e.prompt, e.full || e.thumb));
     g.appendChild(l); g.appendChild(gr); list.appendChild(g);
   });
 }
