@@ -96,8 +96,6 @@ select:focus{border-color:rgba(167,139,250,0.4)}
 .act-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-size:12px;font-weight:500;padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.2s}
 .act-btn:hover{color:var(--text);border-color:rgba(167,139,250,0.3)}
 .hist-prompt{font-size:11px;color:var(--muted);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.enhanced-box{background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.18);border-radius:12px;padding:11px 15px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px;display:none}
-.enhanced-box .lbl{color:var(--accent);font-weight:600;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:3px}
 .badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:999px;margin-bottom:14px}
 .badge-ai{background:rgba(167,139,250,0.12);color:var(--accent);border:1px solid rgba(167,139,250,0.2)}
 footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -179,10 +177,6 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
       <span class="out-title">Oluşturulan Görsel</span>
       <span class="badge badge-ai">✦ xOsmanx07 Studios</span>
     </div>
-    <div class="enhanced-box" id="enhanced-box">
-      <span class="lbl">✦ Geliştirilmiş Prompt</span>
-      <span id="enhanced-text"></span>
-    </div>
     <div class="img-grid" id="img-grid"></div>
   </div>
 
@@ -212,8 +206,6 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
-// ─── Worker proxy endpoint — API key burada gizli kalır ──────────────────────
-// Kendi worker URL'ini buraya yaz, örnek: https://ai-image.xosmanx07.qzz.io/api
 const API_PROXY = 'https://ai-image.xosmanx07.qzz.io/api';
 
 const LOAD_MSGS = [
@@ -224,7 +216,7 @@ const LOAD_MSGS = [
   "Son rötuşlar yapılıyor...",
   "Neredeyse hazır..."
 ];
-const STORAGE_KEY = 'xo7_v3_history';
+const STORAGE_KEY = 'xo7_v4_history';
 const MAX_HISTORY = 15;
 let progTimer, msgTimer, progVal = 0;
 let userKey = '';
@@ -238,10 +230,10 @@ function loadHistory() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY + '_' + userKey) || '[]'); } catch { return []; }
 }
 function saveHistory(h) {
-  try { localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY))); } catch(e) {
+  try { localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY))); } catch {
     try {
-      const trimmed = h.slice(0, 5).map(e => ({...e, thumb: e.thumb ? e.thumb.slice(0, 5000) : null}));
-      localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(trimmed));
+      const t = h.slice(0, 5).map(e => ({...e, thumb: e.thumb?.slice(0, 5000)}));
+      localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(t));
     } catch {}
   }
 }
@@ -269,73 +261,29 @@ function setLoading(on) {
   }
 }
 
-// ─── Worker üzerinden Claude API ─────────────────────────────────────────────
-async function callClaude(body) {
-  const resp = await fetch(API_PROXY, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!resp.ok) {
-    const txt = await resp.text().catch(() => '');
-    throw new Error('API hatası ' + resp.status + (txt ? ': ' + txt.slice(0,120) : ''));
-  }
-  return resp.json();
-}
-
 function downloadImage(src, prompt) {
   const a = Object.assign(document.createElement('a'), { href: src, download: safeFilename(prompt)+'.png' });
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// ─── Görsel üretimi ───────────────────────────────────────────────────────────
+// ─── Görsel üret ──────────────────────────────────────────────────────────────
 async function generateImage(userPrompt, width, height) {
-  // 1. Claude ile prompt'u geliştir (worker proxy üzerinden)
-  const data = await callClaude({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 300,
-    messages: [{
-      role: 'user',
-      content: `You are an expert AI image prompt engineer for FLUX/Stable Diffusion.
-Transform the user's description into a rich, detailed English image generation prompt.
-Include: art style, lighting, mood, color palette, composition, textures, camera angle, quality tags.
-Max 120 words. Return ONLY the prompt text — no explanation, no quotes, no preamble.
-
-User input: "${userPrompt}"`
-    }]
+  const resp = await fetch(API_PROXY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: userPrompt, width, height })
   });
 
-  const enhanced = data.content?.find(b => b.type === 'text')?.text?.trim() || userPrompt;
+  const data = await resp.json();
 
-  // 2. Pollinations/FLUX ile görsel üret
-  const seed = Math.floor(Math.random() * 9999999);
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true&nofeed=true&t=${Date.now()}`;
+  if (!resp.ok || data.error) {
+    throw new Error(data.error || 'API hatası ' + resp.status);
+  }
 
-  const base64 = await fetchAsBase64(url);
-  if (!base64) throw new Error('Görsel indirilemedi, tekrar deneyin.');
+  if (!data.image) throw new Error('Görsel verisi boş geldi.');
 
-  return { enhanced, base64 };
-}
-
-async function fetchAsBase64(url) {
-  try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error();
-    return blobToBase64(await r.blob());
-  } catch {}
-  return imgToBase64(url);
-}
-function blobToBase64(blob) {
-  return new Promise((res, rej) => { const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
-}
-function imgToBase64(url) {
-  return new Promise(resolve => {
-    const img = new Image(); img.crossOrigin='anonymous';
-    const t = setTimeout(()=>resolve(null), 50000);
-    img.onload = () => { clearTimeout(t); try { const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0); resolve(c.toDataURL('image/png')); } catch { resolve(null); } };
-    img.onerror = ()=>{ clearTimeout(t); resolve(null); };
-    img.src = url;
-  });
+  const dataUrl = `data:${data.mimeType || 'image/png'};base64,${data.image}`;
+  return { base64: dataUrl };
 }
 
 function makeCard(base64, prompt) {
@@ -365,7 +313,6 @@ async function generate() {
     ta.focus(); return;
   }
   hideErr();
-  document.getElementById('enhanced-box').style.display='none';
   document.getElementById('output').style.display='none';
   setLoading(true);
   const size = document.getElementById('size').value;
@@ -373,17 +320,13 @@ async function generate() {
   try {
     const result = await generateImage(userPrompt, w, h);
     setLoading(false);
-    if (result.enhanced && result.enhanced !== userPrompt) {
-      document.getElementById('enhanced-text').textContent = result.enhanced;
-      document.getElementById('enhanced-box').style.display = 'block';
-    }
     const grid = document.getElementById('img-grid');
     grid.innerHTML = '';
     document.getElementById('output').style.display = 'block';
     grid.appendChild(makeCard(result.base64, userPrompt));
     const thumb = await shrink(result.base64, 300);
     const hist = loadHistory();
-    hist.unshift({ prompt: userPrompt, enhanced: result.enhanced, thumb, ts: Date.now() });
+    hist.unshift({ prompt: userPrompt, thumb, ts: Date.now() });
     saveHistory(hist); renderHistory();
   } catch(err) {
     setLoading(false);
@@ -394,8 +337,16 @@ async function generate() {
 function shrink(dataUrl, maxPx) {
   return new Promise(resolve => {
     const img = new Image();
-    img.onload = () => { try { const ratio=Math.min(maxPx/img.width,maxPx/img.height,1); const c=document.createElement('canvas'); c.width=Math.round(img.width*ratio); c.height=Math.round(img.height*ratio); c.getContext('2d').drawImage(img,0,0,c.width,c.height); resolve(c.toDataURL('image/jpeg',0.7)); } catch { resolve(dataUrl); } };
-    img.onerror=()=>resolve(dataUrl); img.src=dataUrl;
+    img.onload = () => {
+      try {
+        const ratio = Math.min(maxPx/img.width, maxPx/img.height, 1);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width*ratio); c.height = Math.round(img.height*ratio);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        resolve(c.toDataURL('image/jpeg',0.7));
+      } catch { resolve(dataUrl); }
+    };
+    img.onerror = ()=>resolve(dataUrl); img.src = dataUrl;
   });
 }
 
