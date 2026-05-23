@@ -1,1 +1,65 @@
+const HTML_URL = "https://raw.githubusercontent.com/xOsmanx07/asdasd/refs/heads/main/image.html";
 
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // Ana sayfa isteği → image.html'i GitHub'dan çek
+    if (url.pathname === "/" || url.pathname === "/image.html") {
+      try {
+        const htmlResponse = await fetch(HTML_URL, {
+          headers: {
+            "Cache-Control": "no-cache",
+            "User-Agent": "xOsmanx07-Worker/1.0",
+          },
+        });
+
+        if (!htmlResponse.ok) {
+          return new Response(
+            `<!DOCTYPE html><html><body style="font-family:monospace;padding:2rem;background:#0a0a0a;color:#ff4444;">
+              <h2>⚠ HTML yüklenemedi</h2>
+              <p>GitHub'dan dosya çekilirken hata oluştu: ${htmlResponse.status} ${htmlResponse.statusText}</p>
+              <p>URL: ${HTML_URL}</p>
+            </body></html>`,
+            {
+              status: 502,
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            }
+          );
+        }
+
+        const htmlContent = await htmlResponse.text();
+
+        return new Response(htmlContent, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "public, max-age=60",
+            "X-Powered-By": "xOsmanx07 Studios Worker",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      } catch (err) {
+        return new Response(
+          `<!DOCTYPE html><html><body style="font-family:monospace;padding:2rem;background:#0a0a0a;color:#ff4444;">
+            <h2>⚠ Bağlantı Hatası</h2>
+            <p>${err.message}</p>
+          </body></html>`,
+          {
+            status: 500,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }
+        );
+      }
+    }
+
+    // Diğer tüm yollar → 404
+    return new Response(
+      JSON.stringify({ error: "Not found", path: url.pathname }),
+      {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  },
+};
