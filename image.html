@@ -129,7 +129,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
   <div class="hero">
     <div class="hero-tag"><span>✦</span> Yapay Zeka ile Üret <span>✦</span></div>
     <h1>Hayal Et,<br><span class="gr">Biz Yaratalım</span></h1>
-    <p class="hero-p">Aklındaki sahneyi yaz — Claude'un kendi beyniyle görsele dönüştür.</p>
+    <p class="hero-p">Aklındaki sahneyi yaz — Claude prompt'u geliştirsin, görsel oluşsun.</p>
   </div>
 
   <div class="card">
@@ -169,7 +169,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
     <div class="loading-card">
       <div class="spinner-wrap"><div class="spinner-ring"></div><div class="spinner-ring"></div></div>
       <div class="loading-title">Görsel oluşturuluyor...</div>
-      <div class="loading-sub" id="load-sub">Claude düşünüyor...</div>
+      <div class="loading-sub" id="load-sub">Claude prompt geliştiriyor...</div>
       <div class="progress-wrap"><div class="progress-fill" id="prog"></div></div>
     </div>
   </div>
@@ -180,7 +180,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
       <span class="badge badge-ai">✦ Claude AI</span>
     </div>
     <div class="enhanced-box" id="enhanced-box">
-      <span class="lbl">✦ AI Geliştirilmiş Prompt</span>
+      <span class="lbl">✦ Claude Geliştirilmiş Prompt</span>
       <span id="enhanced-text"></span>
     </div>
     <div class="img-grid" id="img-grid"></div>
@@ -209,8 +209,12 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
+// ─── Cloudflare Worker üzerinden API çağrısı ─────────────────────────────────
+// Worker URL'ini otomatik algıla (aynı origin)
+const API_PROXY = '/api';
+
 const LOAD_MSGS = [
-  "Claude hayal gücü çalışıyor...",
+  "Claude prompt geliştiriyor...",
   "Sahne tasarlanıyor...",
   "Renk paleti seçiliyor...",
   "Detaylar işleniyor...",
@@ -234,7 +238,6 @@ function loadHistory() {
 }
 function saveHistory(h) {
   try { localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY))); } catch(e) {
-    // localStorage dolu olabilir — eski kayıtları sil
     try {
       const trimmed = h.slice(0, 5).map(e => ({...e, thumb: e.thumb ? e.thumb.slice(0, 5000) : null}));
       localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(trimmed));
@@ -268,89 +271,61 @@ function setLoading(on) {
   }
 }
 
+// ─── Claude API proxy çağrısı ────────────────────────────────────────────────
+async function callClaude(body) {
+  const resp = await fetch(API_PROXY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error('API hatası: ' + resp.status);
+  return resp.json();
+}
+
 // ─── download ─────────────────────────────────────────────────────────────────
-function downloadImage(base64DataUrl, prompt) {
+function downloadImage(src, prompt) {
   const filename = safeFilename(prompt) + '.png';
-  const a = Object.assign(document.createElement('a'), { href: base64DataUrl, download: filename });
+  const a = Object.assign(document.createElement('a'), { href: src, download: filename });
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// ─── Claude API: görsel üret (image generation) ───────────────────────────────
+// ─── Ana üretim fonksiyonu ───────────────────────────────────────────────────
 async function generateWithClaude(userPrompt, width, height) {
-  // Adım 1: Promptu geliştir
-  const enhanceResp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      messages: [{
-        role: 'user',
-        content: `You are an expert AI image prompt engineer for Stable Diffusion / FLUX models.
+  // Adım 1: Claude ile prompt'u geliştir
+  const enhanceData = await callClaude({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 300,
+    messages: [{
+      role: 'user',
+      content: `You are an expert AI image prompt engineer for Stable Diffusion / FLUX models.
 Transform the user's description into a rich, detailed English image generation prompt.
 Include: specific art style, lighting type, mood/atmosphere, color palette, composition, textures, camera angle/lens effect, quality tags.
 Max 120 words. Return ONLY the prompt text, no explanation, no quotes, no preamble.
 
 User input: "${userPrompt}"`
-      }]
-    })
+    }]
   });
 
-  if (!enhanceResp.ok) throw new Error('Prompt geliştirme hatası: ' + enhanceResp.status);
-  const enhanceData = await enhanceResp.json();
   const enhanced = enhanceData.content?.find(b => b.type === 'text')?.text?.trim() || userPrompt;
 
-  // Adım 2: Görsel üret — Claude'un image generation API'si
-  const imageResp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{
-        role: 'user',
-        content: `Generate an image based on this prompt: ${enhanced}`
-      }],
-      tools: [{
-        type: 'computer_20241022',
-        name: 'computer',
-        display_width_px: width,
-        display_height_px: height
-      }]
-    })
-  });
-
-  // Claude'un image generation yanıtını parse et
-  if (imageResp.ok) {
-    const imageData = await imageResp.json();
-    const imageBlock = imageData.content?.find(b => b.type === 'image');
-    if (imageBlock?.source?.data) {
-      const mime = imageBlock.source.media_type || 'image/png';
-      return { enhanced, base64: `data:${mime};base64,${imageBlock.source.data}` };
-    }
-  }
-
-  // Fallback: Pollinations (Claude API image gen desteklemiyorsa)
+  // Adım 2: Pollinations ile görsel üret (Claude metin modelidir, görsel üretmez)
   const seed = Math.floor(Math.random() * 9999999);
   const polUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true&nofeed=true&t=${Date.now()}`;
 
   const base64 = await fetchImageAsBase64(polUrl);
-  if (!base64) throw new Error('Görsel üretilemedi');
+  if (!base64) throw new Error('Görsel üretilemedi. Tekrar deneyin.');
 
   return { enhanced, base64 };
 }
 
-// ─── URL → base64 (CORS proxy ile) ──────────────────────────────────────────
+// ─── URL → base64 ────────────────────────────────────────────────────────────
 async function fetchImageAsBase64(url) {
-  // Yöntem 1: direkt fetch (CORS izin verirse)
   try {
     const r = await fetch(url);
     if (!r.ok) throw new Error();
     const blob = await r.blob();
     return await blobToBase64(blob);
   } catch {}
-
-  // Yöntem 2: img element + canvas (bazı resimlerde çalışır)
   return await imgElementToBase64(url);
 }
 
@@ -382,41 +357,34 @@ function imgElementToBase64(url) {
   });
 }
 
-// ─── card builder (base64 src) ───────────────────────────────────────────────
+// ─── kart oluştur ─────────────────────────────────────────────────────────────
 function makeCard(base64, prompt) {
   const card = document.createElement('div');
   card.className = 'img-card';
-
   const img = document.createElement('img');
   img.alt = prompt;
-
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
-
   const dlBtn = document.createElement('button');
   dlBtn.className = 'ol-btn';
   dlBtn.textContent = '↓ İndir';
   dlBtn.onclick = e => { e.stopPropagation(); downloadImage(base64, prompt); };
-
   const openBtn = document.createElement('button');
   openBtn.className = 'ol-btn';
   openBtn.textContent = '⤢ Büyüt';
   openBtn.onclick = e => { e.stopPropagation(); openModal(base64); };
-
   overlay.appendChild(dlBtn);
   overlay.appendChild(openBtn);
   card.appendChild(img);
   card.appendChild(overlay);
   card.onclick = () => openModal(base64);
-
   card.classList.add('skeleton');
   img.onload = () => card.classList.remove('skeleton');
   img.src = base64;
-
   return card;
 }
 
-// ─── main generate ────────────────────────────────────────────────────────────
+// ─── generate ─────────────────────────────────────────────────────────────────
 async function generate() {
   const userPrompt = document.getElementById('prompt').value.trim();
   if (!userPrompt) {
@@ -433,30 +401,24 @@ async function generate() {
   document.getElementById('enhanced-box').style.display = 'none';
   document.getElementById('output').style.display = 'none';
   setLoading(true);
-  document.getElementById('load-sub').textContent = 'Claude düşünüyor...';
 
   const size = document.getElementById('size').value;
   const [w, h] = size.split('x').map(Number);
 
   try {
     const result = await generateWithClaude(userPrompt, w, h);
-
     setLoading(false);
 
-    // Geliştirilmiş promptu göster
     if (result.enhanced && result.enhanced !== userPrompt) {
       document.getElementById('enhanced-text').textContent = result.enhanced;
       document.getElementById('enhanced-box').style.display = 'block';
     }
 
-    // Görseli göster
     const grid = document.getElementById('img-grid');
     grid.innerHTML = '';
     document.getElementById('output').style.display = 'block';
     grid.appendChild(makeCard(result.base64, userPrompt));
 
-    // Sadece BAŞARILI üretimi geçmişe kaydet
-    // Thumbnail: base64'ü küçült (canvas ile 300px)
     const thumb = await shrinkBase64(result.base64, 300);
     const hist = loadHistory();
     hist.unshift({ prompt: userPrompt, enhanced: result.enhanced, thumb, ts: Date.now() });
@@ -465,12 +427,11 @@ async function generate() {
 
   } catch(err) {
     setLoading(false);
-    showErr('Görsel oluşturulamadı: ' + (err.message || 'Bilinmeyen hata') + ' — Tekrar dene.');
-    // HATA DURUMUNDA GEÇMİŞE KAYDETME
+    showErr('Görsel oluşturulamadı: ' + (err.message || 'Bilinmeyen hata'));
   }
 }
 
-// ─── base64 küçültme ─────────────────────────────────────────────────────────
+// ─── base64 küçült ────────────────────────────────────────────────────────────
 function shrinkBase64(dataUrl, maxPx) {
   return new Promise(resolve => {
     const img = new Image();
@@ -498,7 +459,7 @@ function renderHistory() {
   sec.style.display = 'block';
   list.innerHTML = '';
   hist.forEach(entry => {
-    if (!entry.thumb) return; // geçersiz kayıtları atla
+    if (!entry.thumb) return;
     const group = document.createElement('div');
     group.style.marginBottom = '24px';
     const lbl = document.createElement('div');
