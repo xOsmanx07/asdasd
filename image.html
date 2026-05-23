@@ -206,6 +206,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
+// Worker proxy adresin — bunu kendi worker URL'inle değiştir
 const API_PROXY = 'https://ai-image.xosmanx07.qzz.io/api';
 
 const LOAD_MSGS = [
@@ -266,7 +267,6 @@ function downloadImage(src, prompt) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// ─── Görsel üret ──────────────────────────────────────────────────────────────
 async function generateImage(userPrompt, width, height) {
   const resp = await fetch(API_PROXY, {
     method: 'POST',
@@ -277,7 +277,7 @@ async function generateImage(userPrompt, width, height) {
   const data = await resp.json();
 
   if (!resp.ok || data.error) {
-    throw new Error(data.error || 'API hatası ' + resp.status);
+    throw new Error(data.error || 'API hatası: ' + resp.status);
   }
 
   if (!data.image) throw new Error('Görsel verisi boş geldi.');
