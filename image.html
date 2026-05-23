@@ -143,29 +143,12 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
       </button>
     </div>
     <div class="settings-row">
-      <div class="sg"><label>Model</label>
-        <select id="model">
-          <option value="flux">FLUX.1</option>
-          <option value="flux-realism">FLUX Realism</option>
-          <option value="flux-anime">FLUX Anime</option>
-          <option value="flux-3d">FLUX 3D</option>
-          <option value="turbo" selected>SD Turbo</option>
-          <option value="stable-diffusion-3.5-large">SD 3.5 Large</option>
-        </select>
-      </div>
       <div class="sg"><label>Boyut</label>
         <select id="size">
           <option value="1024x1024" selected>1:1 Kare</option>
           <option value="1344x768">16:9 Geniş</option>
           <option value="768x1344">9:16 Dikey</option>
           <option value="1024x768">4:3 Klasik</option>
-        </select>
-      </div>
-      <div class="sg"><label>Adet</label>
-        <select id="count">
-          <option value="1" selected>1 Resim</option>
-          <option value="2">2 Resim</option>
-          <option value="4">4 Resim</option>
         </select>
       </div>
     </div>
@@ -222,12 +205,12 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 const LOAD_MSGS = ["Model hazırlanıyor","Prompt analiz ediliyor","Piksel sihri başlıyor","Renk paleti ayarlanıyor","Detaylar işleniyor","Son rötuşlar yapılıyor","Neredeyse bitti..."];
 const STORAGE_KEY = 'xo7_history';
 const MAX_HISTORY = 20;
+// Sabit model: flux (en stabil)
+const MODEL = 'flux';
 
 let progTimer, msgTimer, progVal = 0;
 let userKey = '';
 
-// Kullanıcıya özel key oluştur (IP tabanlı değil — tarayıcı parmak izi)
-// Worker IP çekemediği için localStorage key'i cihaza özel yapıyoruz
 function getUserKey() {
   let k = localStorage.getItem('xo7_uid');
   if (!k) {
@@ -273,7 +256,84 @@ function setLoading(on) {
   }
 }
 
-function makeCard(url, prompt, delay) {
+// Görseli blob olarak indir (yeni sekme açmaz)
+async function downloadImage(url, filename) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('fetch failed');
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 1000);
+  } catch {
+    // Fallback: data URL yöntemi
+    try {
+      const resp2 = await fetch(url);
+      const blob2 = await resp2.blob();
+      const reader = new FileReader();
+      reader.onload = () => {
+        const a = document.createElement('a');
+        a.href = reader.result;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+      reader.readAsDataURL(blob2);
+    } catch {
+      // Son çare: link ile dene
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.target = '_self';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }
+}
+
+// URL'i birkaç kez retry ile yükle (hata fixı)
+function loadImageWithRetry(url, maxRetries = 3, delayMs = 2000) {
+  return new Promise((resolve) => {
+    let attempt = 0;
+    function tryLoad() {
+      attempt++;
+      const img = new Image();
+      const timeoutId = setTimeout(() => {
+        img.src = ''; // iptal
+        if (attempt < maxRetries) {
+          setTimeout(tryLoad, delayMs);
+        } else {
+          resolve(false);
+        }
+      }, 25000);
+
+      img.onload = () => {
+        clearTimeout(timeoutId);
+        resolve(true);
+      };
+      img.onerror = () => {
+        clearTimeout(timeoutId);
+        if (attempt < maxRetries) {
+          setTimeout(tryLoad, delayMs);
+        } else {
+          resolve(false);
+        }
+      };
+      // Her retry'da yeni seed parametresi ekle
+      const retryUrl = attempt > 1 ? url + '&retry=' + attempt : url;
+      img.src = retryUrl;
+    }
+    tryLoad();
+  });
+}
+
+function makeCard(url, prompt, delay, isHistory = false) {
   const card = document.createElement('div');
   card.className = 'img-card';
   card.style.animationDelay = delay + 's';
@@ -285,13 +345,15 @@ function makeCard(url, prompt, delay) {
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
 
-  const dlBtn = document.createElement('a');
+  const filename = 'xOsmanx07-' + Date.now() + '.png';
+
+  const dlBtn = document.createElement('button');
   dlBtn.className = 'ol-btn';
   dlBtn.textContent = '↓ İndir';
-  dlBtn.href = url;
-  dlBtn.download = 'xOsmanx07-' + Date.now() + '.png';
-  dlBtn.target = '_blank';
-  dlBtn.onclick = e => e.stopPropagation();
+  dlBtn.onclick = e => {
+    e.stopPropagation();
+    downloadImage(url, filename);
+  };
 
   const openBtn = document.createElement('button');
   openBtn.className = 'ol-btn';
@@ -304,15 +366,35 @@ function makeCard(url, prompt, delay) {
   card.appendChild(overlay);
   card.onclick = () => openModal(url);
 
-  // Skeleton → gerçek resim
   card.classList.add('skeleton');
   img.onload = () => { card.classList.remove('skeleton'); };
   img.onerror = () => {
     card.classList.remove('skeleton');
-    card.style.display = 'flex';
-    card.style.alignItems = 'center';
-    card.style.justifyContent = 'center';
-    card.innerHTML = '<span style="font-size:28px;opacity:0.3">✕</span>';
+    // Retry gösterimi
+    if (!isHistory) {
+      card.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;padding:16px"><span style="font-size:28px;opacity:0.3">↻</span><span style="font-size:11px;color:var(--muted);text-align:center">Yeniden deneniyor...</span></div>';
+      // 3 saniye sonra tekrar dene
+      setTimeout(() => {
+        const newUrl = url.replace(/&t=\d+/, '') + '&t=' + Date.now();
+        card.innerHTML = '';
+        card.classList.add('skeleton');
+        const img2 = document.createElement('img');
+        img2.alt = prompt;
+        img2.onload = () => { card.classList.remove('skeleton'); card.appendChild(overlay); card.onclick = () => openModal(newUrl); dlBtn.onclick = e => { e.stopPropagation(); downloadImage(newUrl, filename); }; };
+        img2.onerror = () => {
+          card.classList.remove('skeleton');
+          card.innerHTML = '<span style="font-size:28px;opacity:0.3;display:flex;align-items:center;justify-content:center;height:100%">✕</span>';
+        };
+        img2.src = newUrl;
+        card.appendChild(img2);
+        card.appendChild(overlay);
+      }, 3000);
+    } else {
+      card.style.display = 'flex';
+      card.style.alignItems = 'center';
+      card.style.justifyContent = 'center';
+      card.innerHTML = '<span style="font-size:28px;opacity:0.3">✕</span>';
+    }
   };
   img.src = url;
   return card;
@@ -333,51 +415,34 @@ async function generate() {
   hideErr();
   setLoading(true);
 
-  const model = document.getElementById('model').value;
   const size  = document.getElementById('size').value;
-  const count = parseInt(document.getElementById('count').value);
   const [w,h] = size.split('x').map(Number);
   const seed  = Math.floor(Math.random()*9999999);
   const ts    = Date.now();
 
-  // Önce geçmişi göster (kaybetme)
   renderHistory();
 
-  // Output bölümünü göster, yeni iskeletleri ekle
   const grid = document.getElementById('img-grid');
   grid.innerHTML = '';
   document.getElementById('output').style.display = 'block';
 
-  const urls = [];
-  for (let i = 0; i < count; i++) {
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=${w}&height=${h}&seed=${seed+i}&nologo=true&nofeed=true&t=${ts}`;
-    urls.push(url);
-    const card = makeCard(url, prompt, i * 0.08);
-    grid.appendChild(card);
-  }
+  // Tek resim üretiyoruz (model: flux, count: 1)
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${MODEL}&width=${w}&height=${h}&seed=${seed}&nologo=true&nofeed=true&enhance=true&t=${ts}`;
 
-  // Tüm resimlerin yüklenmesini bekle
-  const promises = urls.map(url => new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
-    setTimeout(() => resolve(false), 30000);
-    img.src = url;
-  }));
+  const card = makeCard(url, prompt, 0);
+  grid.appendChild(card);
 
-  const results = await Promise.all(promises);
+  // Yüklenmesini bekle (retry ile)
+  const success = await loadImageWithRetry(url, 3, 3000);
   setLoading(false);
 
-  const failed = results.filter(r => !r).length;
-  if (failed === count) {
-    showErr('Görseller yüklenemedi. Farklı model veya prompt dene.');
-  } else if (failed > 0) {
-    showErr(failed + ' görsel yüklenemedi, diğerleri hazır.');
+  if (!success) {
+    showErr('Görsel yüklenemedi. Farklı bir prompt dene veya tekrar üret butonuna bas.');
   }
 
   // Geçmişe kaydet
   const hist = loadHistory();
-  hist.unshift({ prompt, urls, model, size, ts });
+  hist.unshift({ prompt, urls: [url], model: MODEL, size, ts });
   saveHistory(hist);
   renderHistory();
 }
@@ -387,7 +452,6 @@ function renderHistory() {
   const sec = document.getElementById('history-section');
   const list = document.getElementById('hist-list');
 
-  // Aktif output'taki promptu bul (çakışmasın diye ilk elemanı atla)
   const currentPrompt = document.getElementById('prompt').value.trim();
   const filtered = hist.filter((h, i) => i > 0 || h.prompt !== currentPrompt);
 
@@ -395,7 +459,7 @@ function renderHistory() {
   sec.style.display = 'block';
   list.innerHTML = '';
 
-  filtered.forEach((entry, gi) => {
+  filtered.forEach((entry) => {
     const group = document.createElement('div');
     group.style.marginBottom = '24px';
 
@@ -407,8 +471,8 @@ function renderHistory() {
     const grid = document.createElement('div');
     grid.className = 'img-grid';
 
-    entry.urls.forEach((url, i) => {
-      const card = makeCard(url, entry.prompt, i * 0.06);
+    (entry.urls || []).forEach((url, i) => {
+      const card = makeCard(url, entry.prompt, i * 0.06, true);
       grid.appendChild(card);
     });
 
@@ -430,7 +494,6 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && e.key==='Enter') generate();
 });
 
-// Sayfa açılışında geçmişi yükle
 userKey = getUserKey();
 renderHistory();
 </script>
