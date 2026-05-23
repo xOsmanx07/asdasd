@@ -53,11 +53,6 @@ textarea.error-border{border-color:rgba(248,113,113,0.5)!important;box-shadow:0 
 .gen-btn:disabled{opacity:0.55;cursor:not-allowed;transform:none}
 .btn-icon{font-size:22px;transition:transform 0.3s}
 .gen-btn:hover:not(:disabled) .btn-icon{transform:rotate(20deg) scale(1.1)}
-.settings-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-.sg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
-.sg label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
-select{background:var(--s2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:9px 32px 9px 12px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(238,238,255,0.35)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.2s}
-select:focus{border-color:rgba(167,139,250,0.4)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .chip{background:var(--s2);border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--muted);padding:6px 14px;cursor:pointer;transition:all 0.2s;user-select:none}
 .chip:hover{background:rgba(167,139,250,0.1);color:var(--accent);border-color:rgba(167,139,250,0.25)}
@@ -76,7 +71,34 @@ select:focus{border-color:rgba(167,139,250,0.4)}
 .progress-fill{height:100%;background:var(--accentg);border-radius:99px;width:0;transition:width 0.4s ease}
 .out-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .out-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
-.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+
+/* === GRID: yan yana simetrik, taşmaz === */
+.img-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+}
+.img-grid .img-card{
+  flex:1 1 calc(33.333% - 14px);
+  min-width:160px;
+  max-width:calc(33.333% - 10px);
+}
+/* 1 kart: tam genişlik */
+.img-grid .img-card:only-child{
+  flex:0 0 100%;
+  max-width:100%;
+}
+/* 2 kart: ikiye böl */
+.img-grid:has(.img-card:nth-child(2):last-child) .img-card{
+  flex:1 1 calc(50% - 7px);
+  max-width:calc(50% - 7px);
+}
+/* 4 kart: 2x2 */
+.img-grid:has(.img-card:nth-child(4):last-child) .img-card{
+  flex:1 1 calc(50% - 7px);
+  max-width:calc(50% - 7px);
+}
+
 .img-card{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--s2);aspect-ratio:1;cursor:pointer;transition:transform 0.2s,border-color 0.2s;animation:img-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both}
 @keyframes img-pop{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
 .img-card:hover{transform:scale(1.03);border-color:rgba(167,139,250,0.35)}
@@ -106,6 +128,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
   .gen-btn{width:100%;height:52px;flex-direction:row}
   h1{font-size:28px}
   header{flex-direction:column;align-items:flex-start;gap:12px}
+  .img-grid .img-card{flex:1 1 calc(50% - 7px);max-width:calc(50% - 7px)}
 }
 </style>
 </head>
@@ -138,16 +161,6 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
         <span class="btn-icon" id="btn-icon">✦</span>
         <span id="btn-text">Üret</span>
       </button>
-    </div>
-    <div class="settings-row">
-      <div class="sg"><label>Boyut</label>
-        <select id="size">
-          <option value="1024x1024" selected>1:1 Kare</option>
-          <option value="1344x768">16:9 Geniş</option>
-          <option value="768x1344">9:16 Dikey</option>
-          <option value="1024x768">4:3 Klasik</option>
-        </select>
-      </div>
     </div>
     <div class="chips">
       <span class="chip" onclick="setChip(this)">cyberpunk şehir, neon ışıklar, yağmurlu gece</span>
@@ -206,7 +219,6 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
-// Worker proxy adresin — bunu kendi worker URL'inle değiştir
 const API_PROXY = 'https://ai-image.xosmanx07.qzz.io/api';
 
 const LOAD_MSGS = [
@@ -267,21 +279,15 @@ function downloadImage(src, prompt) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-async function generateImage(userPrompt, width, height) {
+async function generateImage(userPrompt) {
   const resp = await fetch(API_PROXY, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: userPrompt, width, height })
+    body: JSON.stringify({ prompt: userPrompt, width: 1024, height: 1024 })
   });
-
   const data = await resp.json();
-
-  if (!resp.ok || data.error) {
-    throw new Error(data.error || 'API hatası: ' + resp.status);
-  }
-
+  if (!resp.ok || data.error) throw new Error(data.error || 'API hatası: ' + resp.status);
   if (!data.image) throw new Error('Görsel verisi boş geldi.');
-
   const dataUrl = `data:${data.mimeType || 'image/png'};base64,${data.image}`;
   return { base64: dataUrl };
 }
@@ -315,10 +321,8 @@ async function generate() {
   hideErr();
   document.getElementById('output').style.display='none';
   setLoading(true);
-  const size = document.getElementById('size').value;
-  const [w, h] = size.split('x').map(Number);
   try {
-    const result = await generateImage(userPrompt, w, h);
+    const result = await generateImage(userPrompt);
     setLoading(false);
     const grid = document.getElementById('img-grid');
     grid.innerHTML = '';
