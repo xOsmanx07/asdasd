@@ -76,9 +76,6 @@ select:focus{border-color:rgba(167,139,250,0.4)}
 .progress-fill{height:100%;background:var(--accentg);border-radius:99px;width:0;transition:width 0.4s ease}
 .out-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .out-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
-.out-actions{display:flex;gap:8px}
-.act-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-size:12px;font-weight:500;padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.2s}
-.act-btn:hover{color:var(--text);border-color:rgba(167,139,250,0.3)}
 .img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .img-card{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--s2);aspect-ratio:1;cursor:pointer;transition:transform 0.2s,border-color 0.2s;animation:img-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both}
 @keyframes img-pop{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
@@ -99,9 +96,13 @@ select:focus{border-color:rgba(167,139,250,0.4)}
 .sec-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:10px}
 .sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
 .hist-prompt{font-size:11px;color:var(--muted);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.act-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-size:12px;font-weight:500;padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.2s}
+.act-btn:hover{color:var(--text);border-color:rgba(167,139,250,0.3)}
 footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ft-brand{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;background:var(--accentg);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .ft-note{font-size:12px;color:var(--muted)}
+.enhanced-box{background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px;display:none}
+.enhanced-box span.lbl{color:var(--accent);font-weight:600;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;display:block;margin-bottom:4px}
 @media(max-width:600px){
   .prompt-wrap{flex-direction:column}
   .gen-btn{width:100%;height:52px;flex-direction:row}
@@ -170,28 +171,29 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
     <div class="loading-card">
       <div class="spinner-wrap"><div class="spinner-ring"></div><div class="spinner-ring"></div></div>
       <div class="loading-title">Resim oluşturuluyor...</div>
-      <div class="loading-sub" id="load-sub">Model hazırlanıyor</div>
+      <div class="loading-sub" id="load-sub">Hazırlanıyor...</div>
       <div class="progress-wrap"><div class="progress-fill" id="prog"></div></div>
     </div>
   </div>
 
   <div id="output" style="display:none">
     <div class="out-header">
-      <span class="out-title">Oluşturulan Görseller</span>
+      <span class="out-title">Oluşturulan Görsel</span>
     </div>
-    <div id="enhanced-prompt-box" style="display:none;margin-bottom:14px">
-      <div style="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6">
-        <span style="color:var(--accent);font-weight:600;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;display:block;margin-bottom:4px">✦ AI Geliştirilmiş Prompt</span>
-        <span id="enhanced-prompt-text"></span>
-      </div>
+    <div class="enhanced-box" id="enhanced-box">
+      <span class="lbl">✦ AI Geliştirilmiş Prompt</span>
+      <span id="enhanced-text"></span>
     </div>
     <div class="img-grid" id="img-grid"></div>
   </div>
 
   <div id="history-section" style="display:none;margin-top:48px">
-    <div class="sec-label" style="justify-content:space-between">
-      <span style="display:flex;align-items:center;gap:10px">Geçmiş Üretimler<span style="flex:1;height:1px;background:var(--border);display:block;min-width:40px"></span></span>
-      <button class="act-btn" onclick="clearHistory()" style="flex-shrink:0;margin-left:12px">🗑 Geçmişi Temizle</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">
+        Geçmiş Üretimler
+        <span style="flex:1;height:1px;background:var(--border);display:inline-block;width:40px"></span>
+      </div>
+      <button class="act-btn" onclick="clearHistory()">🗑 Geçmişi Temizle</button>
     </div>
     <div id="hist-list"></div>
   </div>
@@ -208,41 +210,34 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
-const LOAD_MSGS = ["Model hazırlanıyor","Prompt analiz ediliyor","Piksel sihri başlıyor","Renk paleti ayarlanıyor","Detaylar işleniyor","Son rötuşlar yapılıyor","Neredeyse bitti..."];
-const STORAGE_KEY = 'xo7_history';
-const MAX_HISTORY = 20;
-// Sabit model: flux (en stabil)
+const LOAD_MSGS = ["Prompt analiz ediliyor...","Sahne kurgulanıyor...","Piksel sihri başlıyor...","Renk paleti ayarlanıyor...","Detaylar işleniyor...","Son rötuşlar yapılıyor..."];
+const STORAGE_KEY = 'xo7_v2_history';
+const MAX_HISTORY = 15;
 const MODEL = 'flux';
 
 let progTimer, msgTimer, progVal = 0;
 let userKey = '';
 
+// ─── utils ────────────────────────────────────────────────────────────────────
 function getUserKey() {
   let k = localStorage.getItem('xo7_uid');
-  if (!k) {
-    k = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    localStorage.setItem('xo7_uid', k);
-  }
+  if (!k) { k = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2); localStorage.setItem('xo7_uid', k); }
   return k;
 }
-
 function loadHistory() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY + '_' + userKey);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY + '_' + userKey) || '[]'); } catch { return []; }
 }
-
-function saveHistory(hist) {
-  try {
-    localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(hist.slice(0, MAX_HISTORY)));
-  } catch {}
+function saveHistory(h) {
+  try { localStorage.setItem(STORAGE_KEY + '_' + userKey, JSON.stringify(h.slice(0, MAX_HISTORY))); } catch {}
 }
-
+function safeFilename(prompt) {
+  return prompt.replace(/[^\w\s\u00C0-\u024F]/g,'').trim().replace(/\s+/g,'-').slice(0,60) || 'gorsel';
+}
 function setChip(el) { document.getElementById('prompt').value = el.textContent.trim(); }
 function showErr(msg) { document.getElementById('err-box').style.display='block'; document.getElementById('err-msg').textContent=msg; }
 function hideErr() { document.getElementById('err-box').style.display='none'; }
 
+// ─── loading ──────────────────────────────────────────────────────────────────
 function setLoading(on) {
   document.getElementById('loading').style.display = on ? 'block' : 'none';
   document.getElementById('gen-btn').disabled = on;
@@ -252,168 +247,132 @@ function setLoading(on) {
     progVal = 0;
     document.getElementById('prog').style.width = '0%';
     let i = 0;
-    msgTimer = setInterval(() => { i=(i+1)%LOAD_MSGS.length; document.getElementById('load-sub').textContent=LOAD_MSGS[i]; }, 1500);
+    msgTimer = setInterval(() => {
+      i = (i + 1) % LOAD_MSGS.length;
+      document.getElementById('load-sub').textContent = LOAD_MSGS[i];
+    }, 2000);
     progTimer = setInterval(() => {
-      if (progVal < 88) { progVal += (88-progVal)*0.05+0.4; document.getElementById('prog').style.width=progVal+'%'; }
-    }, 200);
+      if (progVal < 90) { progVal += (90 - progVal) * 0.04 + 0.3; document.getElementById('prog').style.width = progVal + '%'; }
+    }, 300);
   } else {
-    clearInterval(msgTimer); clearInterval(progTimer);
+    clearInterval(msgTimer);
+    clearInterval(progTimer);
     document.getElementById('prog').style.width = '100%';
+    setTimeout(() => { document.getElementById('prog').style.width = '0%'; }, 600);
   }
 }
 
-// Görseli blob olarak indir (yeni sekme açmaz)
-async function downloadImage(url, filename) {
+// ─── download (blob, direkt indir) ───────────────────────────────────────────
+async function downloadImage(url, prompt) {
+  const filename = safeFilename(prompt) + '.png';
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('fetch failed');
-    const blob = await resp.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 1000);
+    const r = await fetch(url);
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   } catch {
-    // Fallback: data URL yöntemi
-    try {
-      const resp2 = await fetch(url);
-      const blob2 = await resp2.blob();
-      const reader = new FileReader();
-      reader.onload = () => {
-        const a = document.createElement('a');
-        a.href = reader.result;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      };
-      reader.readAsDataURL(blob2);
-    } catch {
-      // Son çare: link ile dene
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.target = '_self';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    const a = Object.assign(document.createElement('a'), { href: url, download: filename, target: '_self' });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 }
 
-// Resim yüklenmesini bekle, timeout ile
-function waitForImage(url, timeoutMs = 60000) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const tid = setTimeout(() => { img.src = ''; resolve(false); }, timeoutMs);
-    img.onload = () => { clearTimeout(tid); resolve(true); };
-    img.onerror = () => { clearTimeout(tid); resolve(false); };
-    img.src = url + '&cachebust=' + Date.now();
-  });
-}
-
-// Claude API ile promptu zenginleştir (Türkçe → detaylı İngilizce)
-async function enhancePromptWithClaude(userPrompt) {
+// ─── Claude prompt geliştirici ────────────────────────────────────────────────
+async function enhancePrompt(userPrompt) {
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
+        max_tokens: 250,
         messages: [{
           role: 'user',
-          content: `You are an expert AI image prompt engineer. Convert the following user description into a highly detailed, vivid English image generation prompt. Make it rich with visual details: lighting, mood, style, colors, composition, textures, camera angle. Keep it under 120 words. Return ONLY the enhanced prompt, nothing else.
+          content: `You are an expert Stable Diffusion / FLUX image prompt engineer.
+Transform the user's description into a rich, detailed English prompt for an AI image generator.
+Include: art style, lighting, mood, color palette, composition, textures, camera angle/lens.
+Max 100 words. Return ONLY the prompt text, no explanations, no quotes.
 
-User description: "${userPrompt}"`
+User: "${userPrompt}"`
         }]
       })
     });
-    if (!resp.ok) throw new Error('API error');
-    const data = await resp.json();
-    const enhanced = data.content?.find(b => b.type === 'text')?.text?.trim();
-    return enhanced || userPrompt;
-  } catch {
-    return userPrompt; // Hata olursa orijinal promptu kullan
-  }
+    if (!r.ok) return userPrompt;
+    const d = await r.json();
+    return d.content?.find(b => b.type === 'text')?.text?.trim() || userPrompt;
+  } catch { return userPrompt; }
 }
 
-function makeCard(url, prompt, delay, isHistory = false) {
+// ─── image → base64 (geçmiş için) ───────────────────────────────────────────
+function imgToBase64(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        // Thumbnail boyut: geçmiş için küçük tut (localStorage sınırı)
+        const max = 320;
+        const ratio = Math.min(max / img.naturalWidth, max / img.naturalHeight, 1);
+        c.width = Math.round(img.naturalWidth * ratio);
+        c.height = Math.round(img.naturalHeight * ratio);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.75));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+// ─── card builder ─────────────────────────────────────────────────────────────
+// src: URL (canlı) veya base64 (geçmiş)
+// origUrl: indirme için orijinal URL (geçmişte null olabilir)
+function makeCard(src, prompt, origUrl, delay) {
   const card = document.createElement('div');
   card.className = 'img-card';
-  card.style.animationDelay = delay + 's';
+  card.style.animationDelay = (delay || 0) + 's';
 
   const img = document.createElement('img');
   img.alt = prompt;
-  img.loading = 'lazy';
 
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
 
-  const safePrompt = prompt.replace(/[^\w\s\u00C0-\u024F\u0400-\u04FF]/g,'').trim().replace(/\s+/g,'-').slice(0,60);
-  const filename = (safePrompt || 'gorsel') + '.png';
-
   const dlBtn = document.createElement('button');
   dlBtn.className = 'ol-btn';
   dlBtn.textContent = '↓ İndir';
-  dlBtn.onclick = e => {
-    e.stopPropagation();
-    downloadImage(url, filename);
-  };
+  dlBtn.onclick = e => { e.stopPropagation(); downloadImage(origUrl || src, prompt); };
 
   const openBtn = document.createElement('button');
   openBtn.className = 'ol-btn';
   openBtn.textContent = '⤢ Büyüt';
-  openBtn.onclick = e => { e.stopPropagation(); openModal(url); };
+  openBtn.onclick = e => { e.stopPropagation(); openModal(src); };
 
   overlay.appendChild(dlBtn);
   overlay.appendChild(openBtn);
   card.appendChild(img);
   card.appendChild(overlay);
-  card.onclick = () => openModal(url);
+  card.onclick = () => openModal(src);
 
   card.classList.add('skeleton');
-  img.onload = () => { card.classList.remove('skeleton'); };
+  img.onload = () => card.classList.remove('skeleton');
   img.onerror = () => {
     card.classList.remove('skeleton');
-    // Retry gösterimi
-    if (!isHistory) {
-      card.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;padding:16px"><span style="font-size:28px;opacity:0.3">↻</span><span style="font-size:11px;color:var(--muted);text-align:center">Yeniden deneniyor...</span></div>';
-      // 3 saniye sonra tekrar dene
-      setTimeout(() => {
-        const newUrl = url.replace(/&t=\d+/, '') + '&t=' + Date.now();
-        card.innerHTML = '';
-        card.classList.add('skeleton');
-        const img2 = document.createElement('img');
-        img2.alt = prompt;
-        img2.onload = () => { card.classList.remove('skeleton'); card.appendChild(overlay); card.onclick = () => openModal(newUrl); dlBtn.onclick = e => { e.stopPropagation(); downloadImage(newUrl, filename); }; };
-        img2.onerror = () => {
-          card.classList.remove('skeleton');
-          card.innerHTML = '<span style="font-size:28px;opacity:0.3;display:flex;align-items:center;justify-content:center;height:100%">✕</span>';
-        };
-        img2.src = newUrl;
-        card.appendChild(img2);
-        card.appendChild(overlay);
-      }, 3000);
-    } else {
-      card.style.display = 'flex';
-      card.style.alignItems = 'center';
-      card.style.justifyContent = 'center';
-      card.innerHTML = '<span style="font-size:28px;opacity:0.3">✕</span>';
-    }
+    card.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.3;font-size:28px">✕</div>';
   };
-  img.src = url;
+  img.src = src;
   return card;
 }
 
+// ─── main generate ────────────────────────────────────────────────────────────
 async function generate() {
   const userPrompt = document.getElementById('prompt').value.trim();
   if (!userPrompt) {
     const ta = document.getElementById('prompt');
-    ta.classList.add('shake','error-border');
-    showErr('Lütfen bir prompt gir! Ne hayal ettiğini yaz.');
+    ta.classList.add('shake', 'error-border');
+    showErr('Lütfen bir prompt gir!');
     setTimeout(() => ta.classList.remove('shake'), 400);
     setTimeout(() => { ta.classList.remove('error-border'); hideErr(); }, 2500);
     ta.focus();
@@ -421,65 +380,128 @@ async function generate() {
   }
 
   hideErr();
-  document.getElementById('enhanced-prompt-box').style.display = 'none';
+  document.getElementById('enhanced-box').style.display = 'none';
   setLoading(true);
-
-  const size  = document.getElementById('size').value;
-  const [w,h] = size.split('x').map(Number);
-  const seed  = Math.floor(Math.random()*9999999);
-
-  // Claude ile promptu geliştir
   document.getElementById('load-sub').textContent = 'Prompt geliştiriliyor...';
-  const enhancedPrompt = await enhancePromptWithClaude(userPrompt);
 
-  // Geliştirilmiş promptu göster
-  if (enhancedPrompt !== userPrompt) {
-    document.getElementById('enhanced-prompt-text').textContent = enhancedPrompt;
-    document.getElementById('enhanced-prompt-box').style.display = 'block';
+  const size = document.getElementById('size').value;
+  const [w, h] = size.split('x').map(Number);
+  const seed = Math.floor(Math.random() * 9999999);
+
+  // 1. Claude ile prompt'u zenginleştir
+  const enhanced = await enhancePrompt(userPrompt);
+
+  // 2. Geliştirilmiş promptu göster
+  if (enhanced !== userPrompt) {
+    document.getElementById('enhanced-text').textContent = enhanced;
+    document.getElementById('enhanced-box').style.display = 'block';
   }
 
   document.getElementById('load-sub').textContent = 'Görsel oluşturuluyor...';
 
   const ts = Date.now();
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?model=${MODEL}&width=${w}&height=${h}&seed=${seed}&nologo=true&nofeed=true&t=${ts}`;
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=${MODEL}&width=${w}&height=${h}&seed=${seed}&nologo=true&nofeed=true&t=${ts}`;
 
-  renderHistory();
-
+  // 3. Output alanını hazırla
   const grid = document.getElementById('img-grid');
   grid.innerHTML = '';
   document.getElementById('output').style.display = 'block';
 
-  const card = makeCard(url, userPrompt, 0);
+  // 4. Kart oluştur — loading bu img'nin yüklenmesiyle kapanır
+  const card = document.createElement('div');
+  card.className = 'img-card skeleton';
+  const img = document.createElement('img');
+  img.alt = userPrompt;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  const dlBtn = document.createElement('button');
+  dlBtn.className = 'ol-btn';
+  dlBtn.textContent = '↓ İndir';
+  const openBtn = document.createElement('button');
+  openBtn.className = 'ol-btn';
+  openBtn.textContent = '⤢ Büyüt';
+  openBtn.onclick = e => { e.stopPropagation(); openModal(url); };
+  overlay.appendChild(dlBtn);
+  overlay.appendChild(openBtn);
+  card.appendChild(img);
+  card.appendChild(overlay);
+  card.onclick = () => openModal(url);
   grid.appendChild(card);
 
-  // Görsel yüklenince veya timeout'ta loading'i kapat
-  const success = await waitForImage(url, 55000);
-  setLoading(false);
+  // Timeout fallback: 90 saniyede her halükarda loading'i kapat
+  const fallbackTimer = setTimeout(() => {
+    setLoading(false);
+    showErr('Görsel çok uzun sürdü. Tekrar dene.');
+  }, 90000);
 
-  if (!success) {
-    showErr('Görsel yüklenemedi. Farklı bir prompt dene veya tekrar üret butonuna bas.');
-  }
+  img.onload = async () => {
+    clearTimeout(fallbackTimer);
+    card.classList.remove('skeleton');
+    setLoading(false);
 
-  // Geçmişe kaydet
-  const hist = loadHistory();
-  hist.unshift({ prompt: userPrompt, enhancedPrompt, urls: [url], model: MODEL, size, ts });
-  saveHistory(hist);
-  renderHistory();
+    dlBtn.onclick = e => { e.stopPropagation(); downloadImage(url, userPrompt); };
+
+    // Geçmiş için base64 thumbnail al
+    const thumb = await imgToBase64(url);
+
+    const hist = loadHistory();
+    hist.unshift({ prompt: userPrompt, enhanced, url, thumb, size, ts });
+    saveHistory(hist);
+    renderHistory();
+  };
+
+  img.onerror = () => {
+    clearTimeout(fallbackTimer);
+    setLoading(false);
+    card.classList.remove('skeleton');
+
+    // Otomatik 1 retry
+    card.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px"><span style="font-size:24px;opacity:0.4">↻</span><span style="font-size:11px;color:var(--muted)">Yeniden deneniyor...</span></div>';
+    setTimeout(() => {
+      const retryUrl = url.replace(/&t=\d+/, '') + '&t=' + Date.now();
+      card.innerHTML = '';
+      card.classList.add('skeleton');
+      const img2 = document.createElement('img');
+      img2.alt = userPrompt;
+      img2.onload = async () => {
+        card.classList.remove('skeleton');
+        card.appendChild(img2);
+        card.appendChild(overlay);
+        card.onclick = () => openModal(retryUrl);
+        dlBtn.onclick = e => { e.stopPropagation(); downloadImage(retryUrl, userPrompt); };
+
+        const thumb = await imgToBase64(retryUrl);
+        const hist = loadHistory();
+        hist.unshift({ prompt: userPrompt, enhanced, url: retryUrl, thumb, size, ts });
+        saveHistory(hist);
+        renderHistory();
+      };
+      img2.onerror = () => {
+        card.classList.remove('skeleton');
+        card.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.3;font-size:24px">✕</div>';
+        showErr('Görsel oluşturulamadı. Farklı bir prompt dene.');
+      };
+      img2.src = retryUrl;
+      card.appendChild(img2);
+      card.appendChild(overlay);
+    }, 3000);
+  };
+
+  img.src = url;
 }
 
+// ─── history ──────────────────────────────────────────────────────────────────
 function renderHistory() {
   const hist = loadHistory();
   const sec = document.getElementById('history-section');
   const list = document.getElementById('hist-list');
 
-  const currentPrompt = document.getElementById('prompt').value.trim();
-  const filtered = hist.filter((h, i) => i > 0 || h.prompt !== currentPrompt);
-
-  if (filtered.length === 0) { sec.style.display = 'none'; return; }
+  if (hist.length === 0) { sec.style.display = 'none'; return; }
   sec.style.display = 'block';
   list.innerHTML = '';
 
-  filtered.forEach((entry) => {
+  hist.forEach(entry => {
     const group = document.createElement('div');
     group.style.marginBottom = '24px';
 
@@ -491,10 +513,12 @@ function renderHistory() {
     const grid = document.createElement('div');
     grid.className = 'img-grid';
 
-    (entry.urls || []).forEach((url, i) => {
-      const card = makeCard(url, entry.prompt, i * 0.06, true);
-      grid.appendChild(card);
-    });
+    // Geçmişte thumb (base64) varsa onu göster, yoksa URL'den çek
+    const displaySrc = entry.thumb || entry.url || (entry.urls && entry.urls[0]);
+    const origUrl = entry.url || (entry.urls && entry.urls[0]);
+    if (displaySrc) {
+      grid.appendChild(makeCard(displaySrc, entry.prompt, origUrl, 0));
+    }
 
     group.appendChild(grid);
     list.appendChild(group);
@@ -508,17 +532,12 @@ function clearHistory() {
   document.getElementById('hist-list').innerHTML = '';
 }
 
-function clearOut() {
-  document.getElementById('output').style.display = 'none';
-  document.getElementById('img-grid').innerHTML = '';
-}
-
-function openModal(src) { document.getElementById('modal-img').src=src; document.getElementById('modal').classList.add('open'); }
+function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
 document.addEventListener('keydown', e => {
-  if (e.key==='Escape') closeModal();
-  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') generate();
+  if (e.key === 'Escape') closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generate();
 });
 
 userKey = getUserKey();
