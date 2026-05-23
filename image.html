@@ -120,7 +120,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
       <div class="brand-logo">✦</div>
       <div>
         <div class="brand-name">xOsmanx07 Studios</div>
-        <div class="brand-sub">AI Image Generator</div>
+        <div class="brand-sub">DarkLords Studio · AI Image</div>
       </div>
     </div>
     <div class="header-pill"><span class="dot-live"></span> Çevrimiçi</div>
@@ -129,7 +129,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
   <div class="hero">
     <div class="hero-tag"><span>✦</span> Yapay Zeka ile Üret <span>✦</span></div>
     <h1>Hayal Et,<br><span class="gr">Biz Yaratalım</span></h1>
-    <p class="hero-p">Aklındaki sahneyi yaz — Claude prompt'u geliştirsin, görsel oluşsun.</p>
+    <p class="hero-p">Aklındaki sahneyi yaz, saniyeler içinde görsele dönüştür.</p>
   </div>
 
   <div class="card">
@@ -169,7 +169,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
     <div class="loading-card">
       <div class="spinner-wrap"><div class="spinner-ring"></div><div class="spinner-ring"></div></div>
       <div class="loading-title">Görsel oluşturuluyor...</div>
-      <div class="loading-sub" id="load-sub">Claude prompt geliştiriyor...</div>
+      <div class="loading-sub" id="load-sub">Sahne hazırlanıyor...</div>
       <div class="progress-wrap"><div class="progress-fill" id="prog"></div></div>
     </div>
   </div>
@@ -177,10 +177,10 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
   <div id="output" style="display:none">
     <div class="out-header">
       <span class="out-title">Oluşturulan Görsel</span>
-      <span class="badge badge-ai">✦ Claude AI</span>
+      <span class="badge badge-ai">✦ xOsmanx07 Studios</span>
     </div>
     <div class="enhanced-box" id="enhanced-box">
-      <span class="lbl">✦ Claude Geliştirilmiş Prompt</span>
+      <span class="lbl">✦ Geliştirilmiş Prompt</span>
       <span id="enhanced-text"></span>
     </div>
     <div class="img-grid" id="img-grid"></div>
@@ -198,8 +198,11 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
   </div>
 
   <footer>
-    <span class="ft-brand">xOsmanx07 Studios</span>
-    <span class="ft-note">Powered by Claude AI · Tüm hakları saklıdır</span>
+    <div>
+      <div class="ft-brand">xOsmanx07 Studios</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Kurucular: xOsmanx07 &amp; DarkLords Studio</div>
+    </div>
+    <span class="ft-note">AI Image Generator · Tüm hakları saklıdır</span>
   </footer>
 </div>
 
@@ -209,25 +212,23 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);displ
 </div>
 
 <script>
-// ─── Cloudflare Worker üzerinden API çağrısı ─────────────────────────────────
-// Worker URL'ini otomatik algıla (aynı origin)
-const API_PROXY = '/api';
+// ─── Worker proxy endpoint — API key burada gizli kalır ──────────────────────
+// Kendi worker URL'ini buraya yaz, örnek: https://ai-image.xosmanx07.qzz.io/api
+const API_PROXY = 'https://ai-image.xosmanx07.qzz.io/api';
 
 const LOAD_MSGS = [
-  "Claude prompt geliştiriyor...",
   "Sahne tasarlanıyor...",
   "Renk paleti seçiliyor...",
   "Detaylar işleniyor...",
   "Işık ve gölgeler ayarlanıyor...",
-  "Son rötuşlar yapılıyor..."
+  "Son rötuşlar yapılıyor...",
+  "Neredeyse hazır..."
 ];
 const STORAGE_KEY = 'xo7_v3_history';
 const MAX_HISTORY = 15;
-
 let progTimer, msgTimer, progVal = 0;
 let userKey = '';
 
-// ─── utils ────────────────────────────────────────────────────────────────────
 function getUserKey() {
   let k = localStorage.getItem('xo7_uid');
   if (!k) { k = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2); localStorage.setItem('xo7_uid', k); }
@@ -244,14 +245,11 @@ function saveHistory(h) {
     } catch {}
   }
 }
-function safeFilename(prompt) {
-  return prompt.replace(/[^\w\s\u00C0-\u024F]/g,'').trim().replace(/\s+/g,'-').slice(0,60) || 'gorsel';
-}
+function safeFilename(p) { return p.replace(/[^\w\s\u00C0-\u024F]/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'gorsel'; }
 function setChip(el) { document.getElementById('prompt').value = el.textContent.trim(); }
 function showErr(msg) { document.getElementById('err-box').style.display='block'; document.getElementById('err-msg').textContent=msg; }
 function hideErr() { document.getElementById('err-box').style.display='none'; }
 
-// ─── loading ──────────────────────────────────────────────────────────────────
 function setLoading(on) {
   document.getElementById('loading').style.display = on ? 'block' : 'none';
   document.getElementById('gen-btn').disabled = on;
@@ -271,226 +269,161 @@ function setLoading(on) {
   }
 }
 
-// ─── Claude API proxy çağrısı ────────────────────────────────────────────────
+// ─── Worker üzerinden Claude API ─────────────────────────────────────────────
 async function callClaude(body) {
   const resp = await fetch(API_PROXY, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if (!resp.ok) throw new Error('API hatası: ' + resp.status);
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => '');
+    throw new Error('API hatası ' + resp.status + (txt ? ': ' + txt.slice(0,120) : ''));
+  }
   return resp.json();
 }
 
-// ─── download ─────────────────────────────────────────────────────────────────
 function downloadImage(src, prompt) {
-  const filename = safeFilename(prompt) + '.png';
-  const a = Object.assign(document.createElement('a'), { href: src, download: filename });
+  const a = Object.assign(document.createElement('a'), { href: src, download: safeFilename(prompt)+'.png' });
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// ─── Ana üretim fonksiyonu ───────────────────────────────────────────────────
-async function generateWithClaude(userPrompt, width, height) {
-  // Adım 1: Claude ile prompt'u geliştir
-  const enhanceData = await callClaude({
+// ─── Görsel üretimi ───────────────────────────────────────────────────────────
+async function generateImage(userPrompt, width, height) {
+  // 1. Claude ile prompt'u geliştir (worker proxy üzerinden)
+  const data = await callClaude({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 300,
     messages: [{
       role: 'user',
-      content: `You are an expert AI image prompt engineer for Stable Diffusion / FLUX models.
+      content: `You are an expert AI image prompt engineer for FLUX/Stable Diffusion.
 Transform the user's description into a rich, detailed English image generation prompt.
-Include: specific art style, lighting type, mood/atmosphere, color palette, composition, textures, camera angle/lens effect, quality tags.
-Max 120 words. Return ONLY the prompt text, no explanation, no quotes, no preamble.
+Include: art style, lighting, mood, color palette, composition, textures, camera angle, quality tags.
+Max 120 words. Return ONLY the prompt text — no explanation, no quotes, no preamble.
 
 User input: "${userPrompt}"`
     }]
   });
 
-  const enhanced = enhanceData.content?.find(b => b.type === 'text')?.text?.trim() || userPrompt;
+  const enhanced = data.content?.find(b => b.type === 'text')?.text?.trim() || userPrompt;
 
-  // Adım 2: Pollinations ile görsel üret (Claude metin modelidir, görsel üretmez)
+  // 2. Pollinations/FLUX ile görsel üret
   const seed = Math.floor(Math.random() * 9999999);
-  const polUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true&nofeed=true&t=${Date.now()}`;
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true&nofeed=true&t=${Date.now()}`;
 
-  const base64 = await fetchImageAsBase64(polUrl);
-  if (!base64) throw new Error('Görsel üretilemedi. Tekrar deneyin.');
+  const base64 = await fetchAsBase64(url);
+  if (!base64) throw new Error('Görsel indirilemedi, tekrar deneyin.');
 
   return { enhanced, base64 };
 }
 
-// ─── URL → base64 ────────────────────────────────────────────────────────────
-async function fetchImageAsBase64(url) {
+async function fetchAsBase64(url) {
   try {
     const r = await fetch(url);
     if (!r.ok) throw new Error();
-    const blob = await r.blob();
-    return await blobToBase64(blob);
+    return blobToBase64(await r.blob());
   } catch {}
-  return await imgElementToBase64(url);
+  return imgToBase64(url);
 }
-
 function blobToBase64(blob) {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result);
-    reader.onerror = rej;
-    reader.readAsDataURL(blob);
-  });
+  return new Promise((res, rej) => { const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
 }
-
-function imgElementToBase64(url) {
+function imgToBase64(url) {
   return new Promise(resolve => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    const tid = setTimeout(() => resolve(null), 45000);
-    img.onload = () => {
-      clearTimeout(tid);
-      try {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        resolve(c.toDataURL('image/png'));
-      } catch { resolve(null); }
-    };
-    img.onerror = () => { clearTimeout(tid); resolve(null); };
+    const img = new Image(); img.crossOrigin='anonymous';
+    const t = setTimeout(()=>resolve(null), 50000);
+    img.onload = () => { clearTimeout(t); try { const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0); resolve(c.toDataURL('image/png')); } catch { resolve(null); } };
+    img.onerror = ()=>{ clearTimeout(t); resolve(null); };
     img.src = url;
   });
 }
 
-// ─── kart oluştur ─────────────────────────────────────────────────────────────
 function makeCard(base64, prompt) {
-  const card = document.createElement('div');
-  card.className = 'img-card';
-  const img = document.createElement('img');
-  img.alt = prompt;
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay';
-  const dlBtn = document.createElement('button');
-  dlBtn.className = 'ol-btn';
-  dlBtn.textContent = '↓ İndir';
-  dlBtn.onclick = e => { e.stopPropagation(); downloadImage(base64, prompt); };
-  const openBtn = document.createElement('button');
-  openBtn.className = 'ol-btn';
-  openBtn.textContent = '⤢ Büyüt';
-  openBtn.onclick = e => { e.stopPropagation(); openModal(base64); };
-  overlay.appendChild(dlBtn);
-  overlay.appendChild(openBtn);
-  card.appendChild(img);
-  card.appendChild(overlay);
-  card.onclick = () => openModal(base64);
+  const card = document.createElement('div'); card.className='img-card';
+  const img = document.createElement('img'); img.alt=prompt;
+  const ov = document.createElement('div'); ov.className='overlay';
+  const dl = document.createElement('button'); dl.className='ol-btn'; dl.textContent='↓ İndir';
+  dl.onclick = e=>{ e.stopPropagation(); downloadImage(base64, prompt); };
+  const big = document.createElement('button'); big.className='ol-btn'; big.textContent='⤢ Büyüt';
+  big.onclick = e=>{ e.stopPropagation(); openModal(base64); };
+  ov.appendChild(dl); ov.appendChild(big);
+  card.appendChild(img); card.appendChild(ov);
+  card.onclick = ()=>openModal(base64);
   card.classList.add('skeleton');
-  img.onload = () => card.classList.remove('skeleton');
+  img.onload = ()=>card.classList.remove('skeleton');
   img.src = base64;
   return card;
 }
 
-// ─── generate ─────────────────────────────────────────────────────────────────
 async function generate() {
   const userPrompt = document.getElementById('prompt').value.trim();
   if (!userPrompt) {
     const ta = document.getElementById('prompt');
-    ta.classList.add('shake','error-border');
-    showErr('Lütfen bir prompt gir!');
-    setTimeout(() => ta.classList.remove('shake'), 400);
-    setTimeout(() => { ta.classList.remove('error-border'); hideErr(); }, 2500);
-    ta.focus();
-    return;
+    ta.classList.add('shake','error-border'); showErr('Lütfen bir prompt gir!');
+    setTimeout(()=>ta.classList.remove('shake'),400);
+    setTimeout(()=>{ ta.classList.remove('error-border'); hideErr(); },2500);
+    ta.focus(); return;
   }
-
   hideErr();
-  document.getElementById('enhanced-box').style.display = 'none';
-  document.getElementById('output').style.display = 'none';
+  document.getElementById('enhanced-box').style.display='none';
+  document.getElementById('output').style.display='none';
   setLoading(true);
-
   const size = document.getElementById('size').value;
   const [w, h] = size.split('x').map(Number);
-
   try {
-    const result = await generateWithClaude(userPrompt, w, h);
+    const result = await generateImage(userPrompt, w, h);
     setLoading(false);
-
     if (result.enhanced && result.enhanced !== userPrompt) {
       document.getElementById('enhanced-text').textContent = result.enhanced;
       document.getElementById('enhanced-box').style.display = 'block';
     }
-
     const grid = document.getElementById('img-grid');
     grid.innerHTML = '';
     document.getElementById('output').style.display = 'block';
     grid.appendChild(makeCard(result.base64, userPrompt));
-
-    const thumb = await shrinkBase64(result.base64, 300);
+    const thumb = await shrink(result.base64, 300);
     const hist = loadHistory();
     hist.unshift({ prompt: userPrompt, enhanced: result.enhanced, thumb, ts: Date.now() });
-    saveHistory(hist);
-    renderHistory();
-
+    saveHistory(hist); renderHistory();
   } catch(err) {
     setLoading(false);
     showErr('Görsel oluşturulamadı: ' + (err.message || 'Bilinmeyen hata'));
   }
 }
 
-// ─── base64 küçült ────────────────────────────────────────────────────────────
-function shrinkBase64(dataUrl, maxPx) {
+function shrink(dataUrl, maxPx) {
   return new Promise(resolve => {
     const img = new Image();
-    img.onload = () => {
-      try {
-        const ratio = Math.min(maxPx / img.width, maxPx / img.height, 1);
-        const c = document.createElement('canvas');
-        c.width = Math.round(img.width * ratio);
-        c.height = Math.round(img.height * ratio);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        resolve(c.toDataURL('image/jpeg', 0.7));
-      } catch { resolve(dataUrl); }
-    };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
+    img.onload = () => { try { const ratio=Math.min(maxPx/img.width,maxPx/img.height,1); const c=document.createElement('canvas'); c.width=Math.round(img.width*ratio); c.height=Math.round(img.height*ratio); c.getContext('2d').drawImage(img,0,0,c.width,c.height); resolve(c.toDataURL('image/jpeg',0.7)); } catch { resolve(dataUrl); } };
+    img.onerror=()=>resolve(dataUrl); img.src=dataUrl;
   });
 }
 
-// ─── history ─────────────────────────────────────────────────────────────────
 function renderHistory() {
   const hist = loadHistory();
   const sec = document.getElementById('history-section');
   const list = document.getElementById('hist-list');
-  if (hist.length === 0) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-  list.innerHTML = '';
-  hist.forEach(entry => {
-    if (!entry.thumb) return;
-    const group = document.createElement('div');
-    group.style.marginBottom = '24px';
-    const lbl = document.createElement('div');
-    lbl.className = 'hist-prompt';
-    lbl.textContent = '✦ ' + entry.prompt;
-    group.appendChild(lbl);
-    const grid = document.createElement('div');
-    grid.className = 'img-grid';
-    grid.appendChild(makeCard(entry.thumb, entry.prompt));
-    group.appendChild(grid);
-    list.appendChild(group);
+  if (!hist.length) { sec.style.display='none'; return; }
+  sec.style.display='block'; list.innerHTML='';
+  hist.forEach(e => {
+    if (!e.thumb) return;
+    const g=document.createElement('div'); g.style.marginBottom='24px';
+    const l=document.createElement('div'); l.className='hist-prompt'; l.textContent='✦ '+e.prompt;
+    const gr=document.createElement('div'); gr.className='img-grid';
+    gr.appendChild(makeCard(e.thumb, e.prompt));
+    g.appendChild(l); g.appendChild(gr); list.appendChild(g);
   });
 }
-
 function clearHistory() {
   if (!confirm('Tüm geçmiş silinsin mi?')) return;
-  try { localStorage.removeItem(STORAGE_KEY + '_' + userKey); } catch {}
-  document.getElementById('history-section').style.display = 'none';
-  document.getElementById('hist-list').innerHTML = '';
+  try { localStorage.removeItem(STORAGE_KEY+'_'+userKey); } catch {}
+  document.getElementById('history-section').style.display='none';
+  document.getElementById('hist-list').innerHTML='';
 }
-
 function openModal(src) { document.getElementById('modal-img').src=src; document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
-
-document.addEventListener('keydown', e => {
-  if (e.key==='Escape') closeModal();
-  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') generate();
-});
-
-userKey = getUserKey();
-renderHistory();
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); if((e.ctrlKey||e.metaKey)&&e.key==='Enter') generate(); });
+userKey=getUserKey(); renderHistory();
 </script>
 </body>
 </html>
